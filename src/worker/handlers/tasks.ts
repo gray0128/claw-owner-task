@@ -182,4 +182,71 @@ app.delete('/:id', async (c) => {
   return c.json(response(true, { message: 'Deleted successfully' }));
 });
 
+// PUT /api/tasks/:id - Update task
+app.put('/:id', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  
+  const existingTask = await c.env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
+  if (!existingTask) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
+
+  const updates: string[] = [];
+  const params: any[] = [];
+
+  const updateFields = ['title', 'description', 'status', 'priority', 'category_id', 'source', 'recurring_rule', 'due_date', 'remind_at'];
+  
+  for (const field of updateFields) {
+    if (body[field] !== undefined) {
+      updates.push(`${field} = ?`);
+      params.push(body[field]);
+    }
+  }
+
+  if (body.metadata !== undefined) {
+    updates.push('metadata = ?');
+    params.push(body.metadata ? JSON.stringify(body.metadata) : null);
+  }
+
+  if (updates.length === 0 && body.tags === undefined) {
+    return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'No update fields provided' }), 400);
+  }
+
+  try {
+    if (updates.length > 0) {
+      updates.push('updated_at = CURRENT_TIMESTAMP');
+      params.push(id);
+      const query = `UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`;
+      await c.env.DB.prepare(query).bind(...params).run();
+    }
+
+    if (body.tags && Array.isArray(body.tags)) {
+      await c.env.DB.prepare('DELETE FROM task_tags WHERE task_id = ?').bind(id).run();
+      const nameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5]+$/;
+      
+      for (const tagIdentifier of body.tags) {
+        const tagName = String(tagIdentifier).trim();
+        if (!nameRegex.test(tagName)) continue;
+
+        let tagRecord = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first();
+        let tagId = tagRecord?.id;
+
+        if (!tagId) {
+          const insertTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first();
+          tagId = insertTag?.id;
+        }
+
+        if (tagId) {
+          try {
+            await c.env.DB.prepare('INSERT INTO task_tags (task_id, tag_id) VALUES (?, ?)').bind(id, tagId).run();
+          } catch(e) { }
+        }
+      }
+    }
+
+    return c.json(response(true, { message: 'Task updated successfully', id }));
+  } catch (err: any) {
+    return c.json(response(false, null, { code: 'DB_ERROR', message: err.message }), 500);
+  }
+});
+
 export const taskHandlers = app;

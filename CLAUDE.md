@@ -17,7 +17,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 当前状态
 
-项目刚初始化，仅有需求文档位于 `docs/需求说明.md`。
+项目核心功能（后端 Cloudflare Worker API、多平台 CLI 工具以及基础前端页面）已开发完成并可用。
+CLI 工具具有对 AI 高度友好的设计，包括自发现命令 `info`，全局机器可读输出参数 `--json`，以及健全的错误捕获与严格时间格式解析机制。
 
 ## 开发注意事项
 

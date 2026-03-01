@@ -19,10 +19,21 @@ function formatOutput(data) {
   return false;
 }
 
+function exitWithError(message) {
+  if (program.opts().json) {
+    console.error(JSON.stringify({ success: false, error: message }));
+  } else {
+    console.error(`\n[Error] ${message}\n`);
+  }
+  process.exit(1);
+}
+
 function parseDateStr(val) {
   if (!val) return undefined;
   const d = new Date(val);
-  if (isNaN(d.getTime())) return val; // fallback
+  if (isNaN(d.getTime())) {
+    throw new Error(`Invalid date format for value: "${val}". Expected YYYY-MM-DD or ISO format.`);
+  }
   const pad = (n) => n.toString().padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
@@ -43,7 +54,7 @@ program
   .command('list')
   .description('List tasks')
   .option('-q, --query <string>', 'Search keyword')
-  .option('-s, --status <string>', 'Filter by status')
+  .option('-s, --status <string>', 'Filter by status (e.g., pending, completed)')
   .option('-p, --priority <string>', 'Filter by priority (low, medium, high)')
   .option('-c, --category <id>', 'Filter by category ID')
   .option('--due <date>', 'Filter by due date (YYYY-MM-DD)')
@@ -88,31 +99,83 @@ program
   .option('--source <string>', 'Source of the task (e.g., user, openclaw)')
   .option('--metadata <json>', 'JSON string of metadata')
   .action(async (title, options) => {
-    let metadataObj = undefined;
-    if (options.metadata) {
-      try {
-        metadataObj = JSON.parse(options.metadata);
-      } catch (e) {
-        console.error('Invalid JSON for metadata');
-        process.exit(1);
+    try {
+      let metadataObj = undefined;
+      if (options.metadata) {
+        try {
+          metadataObj = JSON.parse(options.metadata);
+        } catch (e) {
+          throw new Error('Invalid JSON for metadata');
+        }
       }
-    }
 
-    const payload = {
-      title,
-      description: options.desc,
-      priority: options.priority,
-      category_id: options.category ? parseInt(options.category) : undefined,
-      due_date: parseDateStr(options.due),
-      remind_at: parseDateStr(options.remind),
-      recurring_rule: options.rule,
-      tags: options.tags ? options.tags.split(/[,，]/).map(name => name.trim()).filter(Boolean) : undefined,
-      source: options.source,
-      metadata: metadataObj ? JSON.stringify(metadataObj) : undefined
-    };
-    const res = await api.tasks.create(payload);
-    if (!formatOutput(res)) {
-      console.log(`Task created with ID: ${res.id}`);
+      const payload = {
+        title,
+        description: options.desc,
+        priority: options.priority,
+        category_id: options.category ? parseInt(options.category) : undefined,
+        due_date: parseDateStr(options.due),
+        remind_at: parseDateStr(options.remind),
+        recurring_rule: options.rule,
+        tags: options.tags ? options.tags.split(/[,，]/).map(name => name.trim()).filter(Boolean) : undefined,
+        source: options.source,
+        metadata: metadataObj ? JSON.stringify(metadataObj) : undefined
+      };
+      const res = await api.tasks.create(payload);
+      if (!formatOutput(res)) {
+        console.log(`Task created with ID: ${res.id}`);
+      }
+    } catch (err) {
+      exitWithError(err.message);
+    }
+  });
+
+program
+  .command('update <id>')
+  .description('Update an existing task')
+  .option('-t, --title <string>', 'New title')
+  .option('-d, --desc <string>', 'New description')
+  .option('-s, --status <string>', 'New status (e.g., pending, completed)')
+  .option('-p, --priority <string>', 'New priority (low, medium, high)')
+  .option('-c, --category <id>', 'New category ID')
+  .option('--due <datetime>', 'New due date (accepts YYYY-MM-DD HH:mm:ss or ISO format)')
+  .option('--remind <datetime>', 'New remind at date (accepts YYYY-MM-DD HH:mm:ss or ISO format)')
+  .option('--rule <rule>', 'New recurring rule (daily, weekly, monthly)')
+  .option('--tags <names>', 'New comma separated tag names (e.g. 紧急,工作)')
+  .option('--metadata <json>', 'New JSON string of metadata')
+  .action(async (id, options) => {
+    try {
+      let metadataObj = undefined;
+      if (options.metadata) {
+        try {
+          metadataObj = JSON.parse(options.metadata);
+        } catch (e) {
+          throw new Error('Invalid JSON for metadata');
+        }
+      }
+
+      const payload = {};
+      if (options.title !== undefined) payload.title = options.title;
+      if (options.desc !== undefined) payload.description = options.desc;
+      if (options.status !== undefined) payload.status = options.status;
+      if (options.priority !== undefined) payload.priority = options.priority;
+      if (options.category !== undefined) payload.category_id = options.category ? parseInt(options.category) : null;
+      if (options.due !== undefined) payload.due_date = parseDateStr(options.due);
+      if (options.remind !== undefined) payload.remind_at = parseDateStr(options.remind);
+      if (options.rule !== undefined) payload.recurring_rule = options.rule;
+      if (options.tags !== undefined) payload.tags = options.tags ? options.tags.split(/[,，]/).map(name => name.trim()).filter(Boolean) : undefined;
+      if (metadataObj !== undefined) payload.metadata = JSON.stringify(metadataObj);
+
+      if (Object.keys(payload).length === 0) {
+        throw new Error('No update fields provided');
+      }
+
+      const res = await api.tasks.update(id, payload);
+      if (!formatOutput(res)) {
+        console.log(`Task ${id} updated.`);
+      }
+    } catch (error) {
+      exitWithError(error.message);
     }
   });
 

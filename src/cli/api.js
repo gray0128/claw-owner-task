@@ -2,14 +2,22 @@ import fs from 'fs';
 import path from 'path';
 
 const API_URL = process.env.TASK_API_URL || 'http://localhost:8787/api';
+const isJsonMode = process.argv.includes('--json');
+
+function handleError(msg) {
+  if (isJsonMode) {
+    console.error(JSON.stringify({ success: false, error: msg }));
+  } else {
+    console.error(`\n${msg}\n`);
+  }
+  process.exit(1);
+}
 
 async function request(endpoint, options = {}) {
   const API_KEY = process.env.TASK_API_KEY;
 
   if (!API_KEY) {
-    console.error('\n[Error] TASK_API_KEY environment variable is not set.');
-    console.error('Please configure it before using the CLI.\n');
-    process.exit(1);
+    handleError('[Error] TASK_API_KEY environment variable is not set.\nPlease configure it before using the CLI.');
   }
 
   const headers = {
@@ -36,11 +44,10 @@ async function request(endpoint, options = {}) {
     return json.data;
   } catch (error) {
     if (error.cause && error.cause.code === 'ECONNREFUSED') {
-      console.error(`\n[Offline] Cannot connect to API at ${API_URL}. Please check your network or server status.\n`);
+      handleError(`[Offline] Cannot connect to API at ${API_URL}. Please check your network or server status.`);
     } else {
-      console.error(`\n[Request Failed] ${error.message}\n`);
+      handleError(`[Request Failed] ${error.message}`);
     }
-    process.exit(1);
   }
 }
 
@@ -49,6 +56,7 @@ export const api = {
   tasks: {
     list: (query = '') => request(`/tasks${query}`),
     create: (data) => request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     complete: (id) => request(`/tasks/${id}/complete`, { method: 'PUT' }),
     delete: (id) => request(`/tasks/${id}`, { method: 'DELETE' })
   },
