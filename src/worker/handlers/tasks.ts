@@ -12,6 +12,10 @@ app.get('/', async (c) => {
   const q = c.req.query('q');
   const status = c.req.query('status');
   const tagId = c.req.query('tag');
+  const tagName = c.req.query('tag_name');
+  const priority = c.req.query('priority');
+  const categoryId = c.req.query('category_id');
+  const dueDate = c.req.query('due_date');
   
   let query = `
     SELECT t.*, c.name as category_name, c.color as category_color,
@@ -37,6 +41,22 @@ app.get('/', async (c) => {
   if (tagId) {
     query += ` AND t.id IN (SELECT task_id FROM task_tags WHERE tag_id = ?)`;
     params.push(Number(tagId));
+  }
+  if (tagName) {
+    query += ` AND t.id IN (SELECT task_id FROM task_tags tt JOIN tags tg ON tt.tag_id = tg.id WHERE tg.name = ?)`;
+    params.push(tagName);
+  }
+  if (priority) {
+    query += ` AND t.priority = ?`;
+    params.push(priority);
+  }
+  if (categoryId) {
+    query += ` AND t.category_id = ?`;
+    params.push(Number(categoryId));
+  }
+  if (dueDate) {
+    query += ` AND DATE(t.due_date) = DATE(?)`;
+    params.push(dueDate);
   }
 
   query += ` ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;

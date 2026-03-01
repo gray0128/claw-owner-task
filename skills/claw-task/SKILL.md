@@ -23,7 +23,7 @@ metadata:
 5. **周期任务**：对于周期性任务，可传入 `--rule daily` 或 `weekly`, `monthly` 等。
 
 ## 命令示例
-- `claw-task list --json`：列出所有任务
+- `claw-task list --json`：列出所有任务 (支持 `-s` 状态, `-p` 优先级, `-c` 分类, `-t` 标签, `--due` 日期 等过滤)
 - `claw-task add "完成季度报告" -d "包含财务数据" --source openclaw --tags "工作,P1" --due "2026-03-05 18:00:00" --json`：添加一个任务
 - `claw-task complete 1 --json`：完成 ID 为 1 的任务
 - `claw-task info --json`：查看系统支持的状态、枚举、分类和标签

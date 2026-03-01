@@ -44,10 +44,18 @@ program
   .description('List tasks')
   .option('-q, --query <string>', 'Search keyword')
   .option('-s, --status <string>', 'Filter by status')
+  .option('-p, --priority <string>', 'Filter by priority (low, medium, high)')
+  .option('-c, --category <id>', 'Filter by category ID')
+  .option('--due <date>', 'Filter by due date (YYYY-MM-DD)')
+  .option('-t, --tag <name>', 'Filter by tag name')
   .action(async (options) => {
     const params = new URLSearchParams();
     if (options.query) params.append('q', options.query);
     if (options.status) params.append('status', options.status);
+    if (options.priority) params.append('priority', options.priority);
+    if (options.category) params.append('category_id', options.category);
+    if (options.due) params.append('due_date', options.due);
+    if (options.tag) params.append('tag_name', options.tag);
     const qs = params.toString() ? `?${params.toString()}` : '';
     
     const tasks = await api.tasks.list(qs);
