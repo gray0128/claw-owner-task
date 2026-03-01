@@ -22,11 +22,13 @@
 ## 配置环境变量
 
 需要配置以下环境变量才能正常与后端交互：
+- `TASK_API_URL`: 后端 API 基础地址（默认为 `http://localhost:8787/api`，部署到云端后需要修改为实际地址）
 - `TASK_API_KEY`: API 鉴权密钥
 - `USER_TIMEZONE`: 时区（例如 `Asia/Shanghai`），默认为 UTC+8
 
 如果作为本地用户使用，可以将其添加到 `~/.bashrc` 或 `~/.zshrc` 中：
 ```bash
+export TASK_API_URL="https://your-worker-subdomain.workers.dev/api"
 export TASK_API_KEY="your_secret_api_key"
 export USER_TIMEZONE="Asia/Shanghai"
 ```
@@ -59,6 +61,7 @@ cp -r skills/claw-task ~/.openclaw/skills/
       "claw-task": {
         "enabled": true,
         "env": {
+          "TASK_API_URL": "https://your-worker-subdomain.workers.dev/api",
           "TASK_API_KEY": "your_secret_api_key",
           "USER_TIMEZONE": "Asia/Shanghai"
         }
