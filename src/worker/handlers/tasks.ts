@@ -16,6 +16,7 @@ app.get('/', async (c) => {
   const priority = c.req.query('priority');
   const categoryId = c.req.query('category_id');
   const dueDate = c.req.query('due_date');
+  const remindAt = c.req.query('remind_at');
   
   let query = `
     SELECT t.*, c.name as category_name, c.color as category_color,
@@ -57,6 +58,10 @@ app.get('/', async (c) => {
   if (dueDate) {
     query += ` AND DATE(t.due_date) = DATE(?)`;
     params.push(dueDate);
+  }
+  if (remindAt) {
+    query += ` AND DATE(t.remind_at) = DATE(?)`;
+    params.push(remindAt);
   }
 
   query += ` ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;

@@ -47,6 +47,7 @@ program
   .option('-p, --priority <string>', 'Filter by priority (low, medium, high)')
   .option('-c, --category <id>', 'Filter by category ID')
   .option('--due <date>', 'Filter by due date (YYYY-MM-DD)')
+  .option('--remind <date>', 'Filter by remind date (YYYY-MM-DD)')
   .option('-t, --tag <name>', 'Filter by tag name')
   .action(async (options) => {
     const params = new URLSearchParams();
@@ -55,6 +56,7 @@ program
     if (options.priority) params.append('priority', options.priority);
     if (options.category) params.append('category_id', options.category);
     if (options.due) params.append('due_date', options.due);
+    if (options.remind) params.append('remind_at', options.remind);
     if (options.tag) params.append('tag_name', options.tag);
     const qs = params.toString() ? `?${params.toString()}` : '';
     
