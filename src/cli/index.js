@@ -74,7 +74,19 @@ program
   .option('--remind <datetime>', 'Remind at date (accepts YYYY-MM-DD HH:mm:ss or ISO format)')
   .option('--rule <rule>', 'Recurring rule (daily, weekly, monthly)')
   .option('--tags <names>', 'Comma separated tag names (e.g. 紧急,工作)')
+  .option('--source <string>', 'Source of the task (e.g., user, openclaw)')
+  .option('--metadata <json>', 'JSON string of metadata')
   .action(async (title, options) => {
+    let metadataObj = undefined;
+    if (options.metadata) {
+      try {
+        metadataObj = JSON.parse(options.metadata);
+      } catch (e) {
+        console.error('Invalid JSON for metadata');
+        process.exit(1);
+      }
+    }
+
     const payload = {
       title,
       description: options.desc,
@@ -83,7 +95,9 @@ program
       due_date: parseDateStr(options.due),
       remind_at: parseDateStr(options.remind),
       recurring_rule: options.rule,
-      tags: options.tags ? options.tags.split(/[,，]/).map(name => name.trim()).filter(Boolean) : undefined
+      tags: options.tags ? options.tags.split(/[,，]/).map(name => name.trim()).filter(Boolean) : undefined,
+      source: options.source,
+      metadata: metadataObj ? JSON.stringify(metadataObj) : undefined
     };
     const res = await api.tasks.create(payload);
     if (!formatOutput(res)) {
