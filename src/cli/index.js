@@ -65,7 +65,8 @@ program
         Title: t.title,
         Status: t.status,
         Priority: t.priority,
-        Due: t.due_date,
+        Due: t.due_date || '-',
+        Remind: t.remind_at || '-',
         Category: t.category_name || '-',
         Tags: t.tags && t.tags.length > 0 ? t.tags.map(tag => tag.name).join(', ') : '-'
       })));
