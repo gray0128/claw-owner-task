@@ -13,7 +13,8 @@
     "db:create": "wrangler d1 create claw-owner-task-db",
     "db:migrate:local": "wrangler d1 migrations apply claw-owner-task-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply claw-owner-task-db --remote",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/run_api_tests.js"
   },
   "dependencies": {
     "commander": "^14.0.3",

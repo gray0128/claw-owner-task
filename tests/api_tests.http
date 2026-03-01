@@ -6,28 +6,54 @@
 GET {{baseUrl}}/info
 Authorization: Bearer {{apiKey}}
 
-### F-01: 获取所有任务 (支持搜索)
+### F-01: 获取所有任务 (支持搜索及基础筛选)
 GET {{baseUrl}}/tasks?q=咖啡
 Authorization: Bearer {{apiKey}}
 
-### F-02: 创建一个 AI 生成的任务 (带元数据与溯源)
+### F-07: 任务列表多维度筛选验证 (标签名、优先级、状态)
+GET {{baseUrl}}/tasks?tag_name=紧急&priority=high&status=in_progress
+Authorization: Bearer {{apiKey}}
+
+### F-02: 创建一个 AI 生成的任务 (带元数据与溯源，标签自动创建)
 POST {{baseUrl}}/tasks
 Authorization: Bearer {{apiKey}}
 Content-Type: application/json
 
 {
   "title": "分析新版 API 文档",
-  "description": "- [ ] 阅读文档
-- [ ] 总结变更",
+  "description": "- [ ] 阅读文档\n- [ ] 总结变更",
   "priority": "high",
   "category_id": 1,
   "source": "openclaw",
-  "metadata": "{"reason": "doc_update", "ref_url": "https://example.com/api"}"
+  "tags": ["紧急", "文档更新"],
+  "metadata": "{\"reason\": \"doc_update\", \"ref_url\": \"https://example.com/api\"}",
+  "due_date": "2026-03-05T10:00:00.000Z"
+}
+
+### F-06: 修改已有任务 (更新字段并关联新标签)
+PUT {{baseUrl}}/tasks/1
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+  "title": "购买两种咖啡豆",
+  "priority": "high",
+  "tags": ["采购", "紧急"],
+  "due_date": "2026-03-02T12:00:00.000Z"
 }
 
 ### F-03: 标记任务完成 (验证周期逻辑)
 PUT {{baseUrl}}/tasks/3/complete
 Authorization: Bearer {{apiKey}}
+
+### F-08: 标签格式校验测试 (应被拒绝，包含特殊字符)
+POST {{baseUrl}}/tags
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+  "name": "Invalid Tag !"
+}
 
 ### R-01: 模拟云端提醒检查 (Bark)
 POST {{baseUrl}}/remind/check?channel=cloud
@@ -40,3 +66,13 @@ Authorization: Bearer {{apiKey}}
 ### S-01: 无效鉴权测试 (应返回 401)
 GET {{baseUrl}}/info
 Authorization: Bearer WRONG_KEY
+
+### T-02: 非法时间格式校验 (应被拒绝)
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+  "title": "测试时间校验",
+  "due_date": "2026/03/05 10:00:00"
+}

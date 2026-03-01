@@ -85,6 +85,17 @@ app.post('/', async (c) => {
 
   if (!title) return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'Title is required' }), 400);
 
+  // Time format validation
+  const isValidDate = (dateStr: string) => {
+    if (!dateStr) return true;
+    const isoRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2}))?$/;
+    return isoRegex.test(dateStr) && !isNaN(Date.parse(dateStr));
+  };
+
+  if (!isValidDate(due_date) || !isValidDate(remind_at)) {
+    return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'due_date and remind_at must be valid ISO or YYYY-MM-DD strings' }), 400);
+  }
+
   const metaString = metadata ? JSON.stringify(metadata) : null;
   
   try {
@@ -189,6 +200,18 @@ app.put('/:id', async (c) => {
   
   const existingTask = await c.env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
   if (!existingTask) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
+
+  // Time format validation
+  const isValidDate = (dateStr: string) => {
+    if (!dateStr || typeof dateStr !== 'string') return true;
+    const isoRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2}))?$/;
+    return isoRegex.test(dateStr) && !isNaN(Date.parse(dateStr));
+  };
+
+  if ((body.due_date !== undefined && !isValidDate(body.due_date)) || 
+      (body.remind_at !== undefined && !isValidDate(body.remind_at))) {
+    return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'due_date and remind_at must be valid ISO or YYYY-MM-DD strings' }), 400);
+  }
 
   const updates: string[] = [];
   const params: any[] = [];
