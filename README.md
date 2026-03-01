@@ -33,6 +33,49 @@ export TASK_API_KEY="your_secret_api_key"
 export USER_TIMEZONE="Asia/Shanghai"
 ```
 
+## Cloudflare Worker 部署与配置
+
+本项目的后端采用 Cloudflare Workers + D1 (SQLite) 构建。如果您希望自建后端服务，请按以下步骤操作：
+
+### 1. 初始化并绑定数据库
+在部署前，您需要在您的 Cloudflare 账户中创建一个 D1 数据库：
+```bash
+npx wrangler d1 create claw-owner-task-db
+```
+执行完毕后，终端会输出一段包含 `database_id` 的配置。请将该 ID 复制，并**更新到项目根目录的 `wrangler.toml` 文件中**的对应位置：
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "claw-owner-task-db"
+database_id = "在这里填入您的_DATABASE_ID"
+```
+
+### 2. 数据库迁移
+应用初始的数据库表结构：
+```bash
+# 本地开发环境迁移
+npm run db:migrate:local
+
+# 线上生产环境迁移
+npm run db:migrate:remote
+```
+
+### 3. 配置后端机密变量 (Secrets)
+为了安全起见，`TASK_API_KEY`（鉴权密钥）和 `BARK_URL`（Bark 推送地址，云端提醒必需）不能明文写在配置文件中。
+请通过 Wrangler 设置为 Worker 的机密变量：
+```bash
+npx wrangler secret put TASK_API_KEY
+npx wrangler secret put BARK_URL
+```
+*(在本地开发时，您可以在项目根目录创建一个 `.dev.vars` 文件并写入这些变量。)*
+
+### 4. 部署到云端
+完成以上配置后，将 Worker 部署到您的 Cloudflare 账号：
+```bash
+npm run deploy
+```
+部署成功后，会返回您的 Worker 线上地址，请使用该地址更新前面提到的 CLI 或 OpenCLaw 的 `TASK_API_URL` 环境变量。
+
 ---
 
 ## OpenCLaw 智能体集成指南
