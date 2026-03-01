@@ -1,0 +1,32 @@
+node_modules/
+.DS_Store
+
+# Wrangler / Cloudflare
+.wrangler/
+.dev.vars
+
+# Local environment variables
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cloudflare D1 local database
+*.sqlite
+*.sqlite3
+
+# Test coverage
+coverage/

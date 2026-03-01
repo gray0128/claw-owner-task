@@ -1,0 +1,117 @@
+:root {
+  --primary: #3b82f6;
+  --bg: #f8fafc;
+  --text: #1e293b;
+  --border: #e2e8f0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.settings input {
+  padding: 8px;
+  margin-right: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.task-form {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+.task-form input, .task-form select {
+  padding: 8px;
+  margin-right: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.filters input, .filters select {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+#tasksContainer {
+  list-style: none;
+  padding: 0;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.task-item.completed {
+  opacity: 0.6;
+  background: #f8fafc;
+}
+
+.task-item.completed .task-title {
+  text-decoration: line-through;
+}
+
+.task-actions button {
+  background: #64748b;
+  font-size: 12px;
+  padding: 4px 8px;
+  margin-left: 5px;
+}
+
+.task-actions button.complete-btn {
+  background: #10b981;
+}
+
+.task-actions button.delete-btn {
+  background: #ef4444;
+}

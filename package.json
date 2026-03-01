@@ -1,0 +1,30 @@
+{
+  "name": "claw-owner-task",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "claw-task": "./src/cli/index.js"
+  },
+  "description": "A simple task manager for personal use and OpenCLaw agent",
+  "main": "src/worker/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create claw-owner-task-db",
+    "db:migrate:local": "wrangler d1 migrations apply claw-owner-task-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply claw-owner-task-db --remote",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240222.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.32.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

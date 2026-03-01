@@ -1,0 +1,22 @@
+name = "claw-owner-task"
+main = "src/worker/index.ts"
+compatibility_date = "2024-02-22"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "claw-owner-task-db"
+database_id = "YOUR_DATABASE_ID_HERE" # Need to replace after `wrangler d1 create`
+migrations_dir = "src/worker/db/migrations"
+
+# Environment Variables
+[vars]
+USER_TIMEZONE = "Asia/Shanghai"
+
+# Scheduled Tasks (Cron Triggers)
+# triggers every 5 minutes for cloud bark notifications
+[triggers]
+crons = ["*/5 * * * *"]
+
+[dev]
+port = 8787

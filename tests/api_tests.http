@@ -1,0 +1,42 @@
+### 基础变量配置
+@baseUrl = http://localhost:8787/api
+@apiKey = your_test_api_key_here
+
+### AI-01: 获取系统自发现信息 (Info)
+GET {{baseUrl}}/info
+Authorization: Bearer {{apiKey}}
+
+### F-01: 获取所有任务 (支持搜索)
+GET {{baseUrl}}/tasks?q=咖啡
+Authorization: Bearer {{apiKey}}
+
+### F-02: 创建一个 AI 生成的任务 (带元数据与溯源)
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+  "title": "分析新版 API 文档",
+  "description": "- [ ] 阅读文档
+- [ ] 总结变更",
+  "priority": "high",
+  "category_id": 1,
+  "source": "openclaw",
+  "metadata": "{"reason": "doc_update", "ref_url": "https://example.com/api"}"
+}
+
+### F-03: 标记任务完成 (验证周期逻辑)
+PUT {{baseUrl}}/tasks/3/complete
+Authorization: Bearer {{apiKey}}
+
+### R-01: 模拟云端提醒检查 (Bark)
+POST {{baseUrl}}/remind/check?channel=cloud
+Authorization: Bearer {{apiKey}}
+
+### R-02: 模拟 Agent 提醒检查 (No Bark)
+POST {{baseUrl}}/remind/check?channel=agent
+Authorization: Bearer {{apiKey}}
+
+### S-01: 无效鉴权测试 (应返回 401)
+GET {{baseUrl}}/info
+Authorization: Bearer WRONG_KEY
