@@ -1,7 +1,7 @@
 # GEMINI.md
 
 ## 项目概述
-**龙虾主人简易任务工具 (claw-owner-task)** 是一个专为个人用户和 **AI Agent (OpenCLaw)** 设计的任务管理系统。支持跨平台部署，提供云端自触发提醒（Bark）与 Agent 本地提醒的双重能力。
+**AI优先的任务管理系统 (claw-owner-task)** 是一个专为个人用户和 **AI Agent (OpenCLaw)** 设计的任务管理系统。支持跨平台部署，提供云端自触发提醒（Bark）与 Agent 本地提醒的双重能力。
 
 ### 核心组件
 - **后端 (API)**: Cloudflare Workers + TypeScript。提供自发现接口、Bark 推送、元数据处理、强制鉴权及**严格的时间格式校验**。

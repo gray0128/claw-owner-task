@@ -1,20 +1,11 @@
 ---
-name: claw-task
-description: AI优先的任务管理器 CLI 工具。用于记录用户的待办事项、读取任务列表以及更新任务状态。
-metadata:
-  {
-    "openclaw": {
-      "requires": {
-        "bins": ["claw-task"]
-      },
-      "emoji": "📋"
-    }
-  }
+name: claw-task-antigravity
+description: AI优先的任务管理系统 CLI。当用户要求查询、添加、完成或管理个人任务时，使用本 skill 调用 `claw-task` 命令。
 ---
 
-# claw-task CLI 使用指南（OpenCLaw 专用）
+# claw-task CLI 使用指南（Antigravity 专用）
 
-本 skill 面向 **OpenCLaw** 对话式 AI Agent，通过 `run_shell_command` 调用 `claw-task` CLI 与任务管理系统交互。
+本 skill 面向 **Antigravity / Claude Code** 等本地 AI coding assistant，通过 `run_command` 工具调用 `claw-task` CLI 与任务管理系统交互。
 
 ## 前置条件
 
@@ -30,10 +21,9 @@ metadata:
 ## 调用规范
 
 1. **始终使用 `--json` 参数**：所有查询类命令必须追加 `--json`，以获得机器可解析的结构化输出。
-2. **标记操作来源**：当你代替用户创建任务时，使用 `--source openclaw`，便于后续溯源。
+2. **标记操作来源**：当你代替用户创建任务时，使用 `--source antigravity`，便于后续溯源。
 3. **先 info 后操作**：如不确定分类 ID 或系统枚举值，先执行 `claw-task info --json` 自发现。
 4. **标签无需预创建**：直接在 `--tags` 传入名称，系统会自动创建不存在的标签。
-5. **周期任务**：对于周期性任务，可传入 `--rule daily` 或 `weekly`, `monthly` 等。
 
 ## 完整命令参考
 
@@ -70,7 +60,7 @@ claw-task list -s pending -p high -q "报告" --json
 ### 创建任务 (add)
 ```bash
 # 基础创建
-claw-task add "完成季度报告" --source openclaw --json
+claw-task add "完成季度报告" --source antigravity --json
 
 # 完整参数创建
 claw-task add "完成季度报告" \
@@ -79,17 +69,17 @@ claw-task add "完成季度报告" \
   --due "2026-03-15 18:00:00" \
   --remind "2026-03-14 09:00:00" \
   --tags "工作,P1,财务" \
-  --source openclaw \
+  --source antigravity \
   --json
 
 # 携带上下文元数据（记录任务创建时的对话背景）
 claw-task add "重构认证模块" \
-  --source openclaw \
-  --metadata '{"context": "用户在讨论安全漏洞修复时提出", "chat_id": "abc123"}' \
+  --source antigravity \
+  --metadata '{"context": "用户在讨论安全漏洞修复时提出", "related_files": ["src/auth.ts"]}' \
   --json
 
 # 周期性任务
-claw-task add "每日站会" --rule daily --source openclaw --json
+claw-task add "每日站会" --rule daily --source antigravity --json
 ```
 
 ### 更新任务 (update)
@@ -140,11 +130,14 @@ claw-task add-category "新分类" --color "#FF5733" --json
 ### 场景：用户说「帮我记一下，下周五之前要提交报告」
 
 ```bash
-# Step 1: 创建任务，设置截止日期为下周五 EOD
+# Step 1: 先了解当前时间（使用 run_command 获取系统时间）
+date
+
+# Step 2: 创建任务，设置截止日期为下周五 EOD
 claw-task add "提交季度报告" \
   -p medium \
   --due "2026-03-07 18:00:00" \
-  --source openclaw \
+  --source antigravity \
   --json
 ```
 
@@ -178,7 +171,7 @@ claw-task complete 3 --json
   "due_date": "2026-03-15 18:00:00",
   "remind_at": "2026-03-14 09:00:00",
   "recurring_rule": null,
-  "source": "openclaw",
+  "source": "antigravity",
   "category_id": null,
   "category_name": null,
   "tags": [{ "id": 1, "name": "工作" }],
