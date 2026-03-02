@@ -32,4 +32,7 @@ build/
 coverage/
 
 # Rust build outputs
-target/bin/
+target/
+
+# Binary outputs
+bin/
