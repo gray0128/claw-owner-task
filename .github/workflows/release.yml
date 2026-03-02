@@ -7,42 +7,51 @@ on:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
-            target: bun-linux-x64
+            target: x86_64-unknown-linux-gnu
             artifact_name: claw-task-linux
           - os: macos-latest
-            target: bun-macos-x64
-            artifact_name: claw-task-macos
+            target: aarch64-apple-darwin
+            artifact_name: claw-task-macos-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: claw-task-macos-x64
           - os: windows-latest
-            target: bun-windows-x64
+            target: x86_64-pc-windows-msvc
             artifact_name: claw-task.exe
 
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          bun-version: latest
+          targets: ${{ matrix.target }}
 
-      - name: Install dependencies
-        run: bun install
+      - name: Build Release Binary
+        working-directory: cli-rust
+        run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Build Binary
+      - name: Prepare artifact (Unix)
+        if: runner.os != 'Windows'
         run: |
-          mkdir -p bin
-          bun build ./src/cli/index.js --compile --target=${{ matrix.target }} --outfile=bin/${{ matrix.artifact_name }}
+          cp cli-rust/target/${{ matrix.target }}/release/claw-task ${{ matrix.artifact_name }}
+          chmod +x ${{ matrix.artifact_name }}
+
+      - name: Prepare artifact (Windows)
+        if: runner.os == 'Windows'
+        run: cp cli-rust/target/${{ matrix.target }}/release/claw-task.exe ${{ matrix.artifact_name }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: bin/${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
 
   release:
     needs: build
@@ -61,7 +70,8 @@ jobs:
         with:
           files: |
             bin-dist/claw-task-linux
-            bin-dist/claw-task-macos
+            bin-dist/claw-task-macos-arm64
+            bin-dist/claw-task-macos-x64
             bin-dist/claw-task.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

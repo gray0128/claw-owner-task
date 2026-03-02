@@ -6,7 +6,7 @@
 ### 核心组件
 - **后端 (API)**: Cloudflare Workers + TypeScript。提供自发现接口、Bark 推送、元数据处理、强制鉴权及**严格的时间格式校验**。
 - **数据库**: Cloudflare D1 (SQLite)。存储 UTC 时间、AI 上下文及关联标签。
-- **跨平台 CLI (`claw-task`)**: Node.js 编写，支持多环境下的任务管理与提醒。
+- **跨平台 CLI (`claw-task`)**: 提供 Node.js 版 (`src/cli/`) 和 Rust 高性能版 (`cli-rust/`) 两种实现，功能完全一致。
 - **前端 (Web)**: 原生 HTML/CSS/JS (No-build)，极简且功能完备。
 
 ## 核心原则 (AI 交互准则)
@@ -27,23 +27,23 @@
 ## 开发路线图 (Roadmap)
 
 - [x] **Phase 1 (Foundation)**: 完成 Cloudflare Workers 与 D1 数据库的基础架构搭建及核心 API。
-- [x] **Phase 2 (CLI)**: 实现跨平台 Node.js 命令行工具，支持 CRUD 及提醒检查。**支持使用 Bun 打包为独立高性能二进制文件。**
+- [x] **Phase 2 (CLI)**: 实现跨平台 Node.js 命令行工具，支持 CRUD 及提醒检查。提供 Rust 版高性能二进制实现。
 - [x] **Phase 3 (Web)**: 实现无构建步骤的 Web 管理界面。
 - [x] **Phase 4 (Integration)**: 完成 OpenCLaw 集成、自动化测试验证与全链路交付。
 
 ## 目录结构
 - `src/worker/`: 后端中间件、服务逻辑、数据库迁移。
 - `src/web/`: 原生 Web 界面。
-- `src/cli/`: 跨平台命令行工具。
+- `src/cli/`: 跨平台命令行工具 (Node.js 版)。
+- `cli-rust/`: 跨平台命令行工具 (Rust 高性能版)。
 - `docs/`: 包含 `需求说明.md`, `技术架构.md`, `开发计划.md`。
 - `tests/`: 包含测试计划、Mock 脚本及自动化 API 测试脚本 (`run_api_tests.js`)。
 
 ---
-**版本**: 1.4.1
-**更新时间**: 2026-03-02 22:30:00
+**版本**: 1.5.0
+**更新时间**: 2026-03-02 13:12:00
 **变更历史**:
-- 2026-03-02: 更新至 1.4.1，集成 GitHub Actions 自动化发布工作流，支持全平台（macOS/Linux/Windows）二进制文件自动打包与分发。
-- 2026-03-02: 更新至 1.4.0，支持使用 Bun 将 CLI 打包为独立二进制文件，显著提升启动性能（~10ms）；更新 README 提供二进制安装指南。
+- 2026-03-02: 更新至 1.5.0，移除 Bun 打包方案及 GitHub Actions 工作流，改用 Rust 实现高性能 CLI 二进制。
 - 2026-03-02: 更新至 1.3.7，引入自动化 API 测试套件 (`npm test`)；增加 API 层的严格时间格式校验；同步项目路线图至 100% 完成状态。
 - 2026-03-01: 更新至 1.3.3，优化 AI 友好度：解除 `--help` 环境变量依赖、全局新增 `--json` 参数、新增 `delete` 命令容错、兼容 ISO 时间格式解析。
 - 2026-03-01: 更新至 1.3.2，全局命令更名为 `claw-task`；支持按名称打标签、多分隔符及正则校验。

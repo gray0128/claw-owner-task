@@ -30,3 +30,6 @@ build/
 
 # Test coverage
 coverage/
+
+# Rust build outputs
+target/bin/

@@ -13,8 +13,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **后端**: Cloudflare Workers + TypeScript + Hono-like routing
 - **数据库**: Cloudflare D1 (SQLite)
+- **CLI**: Node.js 版 (`src/cli/`) + Rust 高性能版 (`cli-rust/`)，功能一致
 - **前端**: 原生 HTML/CSS/JS（浏览器原生 ES Modules，无构建步骤）
-- **测试**: Node.js 原生 Test Runner (`npm test`)
+- **测试**: Node.js 原生 Test Runner (`npm test`)，Rust 单元测试 (`cargo test`)
 
 ## 当前状态
 
@@ -26,9 +27,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 开发与测试命令
 
 - **开发服务器**: `npm run dev` (wrangler dev)
-- **运行测试**: `npm test` (运行 `tests/run_api_tests.js`)
+- **运行 API 测试**: `npm test` (运行 `tests/run_api_tests.js`)
+- **运行 Rust 测试**: `cd cli-rust && cargo test`
 - **数据库迁移**: `npm run db:migrate:local`
-- **CLI 使用**: `node src/cli/index.js [command]` 或 `claw-task [command]` (若已 link)
+- **CLI (Node.js)**: `node src/cli/index.js [command]` 或 `claw-task [command]` (若已 link)
+- **CLI (Rust)**: `cd cli-rust && cargo run -- [command]` 或编译后直接运行二进制
+- **编译 Rust 版**: `cd cli-rust && cargo build --release`
 
 ## 开发注意事项
 
@@ -40,5 +44,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 ---
-**版本**: 1.2.0
-**更新时间**: 2026-03-02 21:00:00
+**版本**: 1.3.0
+**更新时间**: 2026-03-02 13:21:00

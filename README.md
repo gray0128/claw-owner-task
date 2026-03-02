@@ -8,7 +8,7 @@
 如果您追求极致的启动速度且不想安装开发环境：
 
 1. **从 Release 页面下载：**
-   前往 [GitHub Releases](https://github.com/gray0128/claw-owner-task/releases) 页面，下载对应您操作系统的二进制文件（如 `claw-task-macos`, `claw-task-linux`, `claw-task.exe`）。
+   前往 [GitHub Releases](https://github.com/gray0128/claw-owner-task/releases) 页面，下载对应您操作系统的二进制文件（如 `claw-task-macos-arm64`, `claw-task-macos-x64`, `claw-task-linux`, `claw-task.exe`）。
 
 2. **全局可用：**
    ```bash
@@ -22,12 +22,13 @@
    claw-task --help
    ```
 
-### 方案 B：自行编译（需安装 Bun）
-如果您有源码并希望手动编译：
-1. 运行：`npm run build:cli`。
-2. 编译后的文件位于 `bin/claw-task`。
+### 方案 B：自行编译 Rust 版本
+如果您有源码并希望手动编译高性能二进制：
+1. 确保已安装 [Rust 工具链](https://rustup.rs/)。
+2. 运行：`cd cli-rust && cargo build --release`。
+3. 编译后的文件位于 `cli-rust/target/release/claw-task`。
 
-### 方案 B：通过 Node.js
+### 方案 C：通过 Node.js
 1. 确保已安装 Node.js (>= 18.0.0)。
 2. 克隆仓库并安装依赖，进行全局链接：
    ```bash
@@ -147,3 +148,5 @@ cp -r skills/claw-task ~/.openclaw/skills/
 - `npm run deploy`: 部署 Worker 和 D1 到云端
 - `npm run db:migrate:local`: 本地数据库迁移
 - `npm run db:migrate:remote`: 线上数据库迁移
+- `cd cli-rust && cargo build --release`: 编译 Rust 版 CLI
+- `cd cli-rust && cargo test`: 运行 Rust 单元测试
