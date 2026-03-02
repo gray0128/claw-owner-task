@@ -4,6 +4,30 @@
 
 ## 安装
 
+### 方案 A：直接下载二进制文件（推荐，高性能）
+如果您追求极致的启动速度且不想安装开发环境：
+
+1. **从 Release 页面下载：**
+   前往 [GitHub Releases](https://github.com/gray0128/claw-owner-task/releases) 页面，下载对应您操作系统的二进制文件（如 `claw-task-macos`, `claw-task-linux`, `claw-task.exe`）。
+
+2. **全局可用：**
+   ```bash
+   # macOS/Linux 示例
+   chmod +x claw-task-macos
+   sudo mv claw-task-macos /usr/local/bin/claw-task
+   ```
+
+3. **验证安装：**
+   ```bash
+   claw-task --help
+   ```
+
+### 方案 B：自行编译（需安装 Bun）
+如果您有源码并希望手动编译：
+1. 运行：`npm run build:cli`。
+2. 编译后的文件位于 `bin/claw-task`。
+
+### 方案 B：通过 Node.js
 1. 确保已安装 Node.js (>= 18.0.0)。
 2. 克隆仓库并安装依赖，进行全局链接：
    ```bash
@@ -13,11 +37,6 @@
    npm link
    ```
    *(或者使用 `npm install -g .`)*
-
-3. 验证安装：
-   ```bash
-   claw-task --help
-   ```
 
 ## 配置环境变量
 
