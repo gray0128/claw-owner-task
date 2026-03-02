@@ -39,6 +39,17 @@
    ```
    *(或者使用 `npm install -g .`)*
 
+### 设置别名（可选）
+安装完成后，您可以在 `~/.bashrc` 或 `~/.zshrc` 中设置别名以简化使用：
+```bash
+# 二进制版本
+alias ct='/usr/local/bin/claw-task'
+
+# 或 Node.js 版本
+alias ct='claw-task'
+```
+之后即可通过 `ct` 快速调用，例如：`ct list`、`ct add "买牛奶"`。
+
 ## 配置环境变量
 
 需要配置以下环境变量才能正常与后端交互：
