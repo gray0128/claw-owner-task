@@ -237,15 +237,34 @@ test('【基础功能】F-06-CLI-Format: 使用 CLI 风格的时间格式 (YYYY-
   assert.ok(checkBody.success);
 });
 
-test('【基础功能】F-03: 更新任务状态至 completed', async () => {
+test('【基础功能】F-03: 更新任务状态至 completed 及其完成时间记录', async () => {
   const taskId = process.env.TEST_TASK_ID;
   assert.ok(taskId, '未能获取测试任务 ID');
 
-  const { status, body } = await apiFetch(`/tasks/${taskId}/complete`, {
+  let res = await apiFetch(`/tasks/${taskId}/complete`, {
     method: 'PUT'
   });
   
-  assert.strictEqual(status, 200, '应该成功标记任务为完成');
+  assert.strictEqual(res.status, 200, '应该成功标记任务为完成');
+
+  // 验证 completed_at 是否被正确记录
+  let checkRes = await apiFetch(`/tasks/${taskId}`);
+  assert.ok(checkRes.body.data.completed_at, '完成时应当记录 completed_at 时间');
+  
+  // 测试状态重置为 pending 时 completed_at 应该清空
+  let pendingRes = await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status: 'pending' })
+  });
+  assert.strictEqual(pendingRes.status, 200, '应该成功恢复任务为 pending');
+  
+  let checkPendingRes = await apiFetch(`/tasks/${taskId}`);
+  assert.strictEqual(checkPendingRes.body.data.completed_at, null, '状态变更为 pending 时应清空 completed_at');
+
+  // 重新恢复为 completed，确保不影响后续 (如 F-07) 依赖于 completed 状态的用例
+  await apiFetch(`/tasks/${taskId}/complete`, {
+    method: 'PUT'
+  });
 });
 
 test('【基础功能】F-07: 任务列表多维度筛选', async () => {
@@ -261,8 +280,8 @@ test('【基础功能】F-07: 任务列表多维度筛选', async () => {
 });
 
 test('【基础功能】F-07: 按截止日期筛选', async () => {
-  // F-06-DueDate 最后设置：due_date=2026-03-20T12:00:00.000Z
-  const dueDate = '2026-03-20';
+  // F-06-CLI-Format 最后设置：due_date=2026-03-09 10:00:00
+  const dueDate = '2026-03-09';
   const { status, body } = await apiFetch(`/tasks?due_date=${dueDate}`);
   
   assert.strictEqual(status, 200);
