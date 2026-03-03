@@ -183,6 +183,39 @@ test('【基础功能】F-06-Remind: 单独更新提醒时间', async () => {
   assert.strictEqual(finalCheck.data.remind_at, anotherRemindAt, '提醒时间应能多次修改');
 });
 
+test('【基础功能】F-06-DueDate: 单独更新截止日期', async () => {
+  const taskId = process.env.TEST_TASK_ID;
+  assert.ok(taskId, '未能获取测试任务 ID');
+
+  const newDueDate = '2026-03-15T18:00:00.000Z';
+
+  // 1. 单独设置截止日期
+  const { status: updateStatus } = await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ due_date: newDueDate })
+  });
+  assert.strictEqual(updateStatus, 200, '单独更新截止日期应成功');
+
+  // 2. 验证更新结果
+  const { body: checkBody } = await apiFetch(`/tasks/${taskId}`);
+  assert.strictEqual(checkBody.data.due_date, newDueDate, '截止日期应更新为指定值');
+  
+  // 3. 验证其他关键字段未受影响
+  assert.strictEqual(checkBody.data.title, '深度修改后的任务', '标题不应因更新截止日期而改变');
+  // 此时 remind_at 应该是 F-06-Remind 最后设置的值
+  assert.strictEqual(checkBody.data.remind_at, '2026-03-12T08:00:00.000Z', '提醒时间不应因更新截止日期而改变');
+
+  // 4. 将截止日期修改为另一个值
+  const anotherDueDate = '2026-03-20T12:00:00.000Z';
+  await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ due_date: anotherDueDate })
+  });
+  
+  const { body: finalCheck } = await apiFetch(`/tasks/${taskId}`);
+  assert.strictEqual(finalCheck.data.due_date, anotherDueDate, '截止日期应能多次修改');
+});
+
 test('【基础功能】F-03: 更新任务状态至 completed', async () => {
   const taskId = process.env.TEST_TASK_ID;
   assert.ok(taskId, '未能获取测试任务 ID');
@@ -207,8 +240,8 @@ test('【基础功能】F-07: 任务列表多维度筛选', async () => {
 });
 
 test('【基础功能】F-07: 按截止日期筛选', async () => {
-  // F-06 设置：due_date=2026-03-10T10:00:00.000Z
-  const dueDate = '2026-03-10';
+  // F-06-DueDate 最后设置：due_date=2026-03-20T12:00:00.000Z
+  const dueDate = '2026-03-20';
   const { status, body } = await apiFetch(`/tasks?due_date=${dueDate}`);
   
   assert.strictEqual(status, 200);
