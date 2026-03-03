@@ -1,6 +1,6 @@
 {
   "name": "claw-owner-task",
-  "version": "1.0.1",
+  "version": "1.5.3",
   "type": "module",
   "bin": {
     "claw-task": "./src/cli/index.js"
