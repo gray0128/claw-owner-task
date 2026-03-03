@@ -56,8 +56,8 @@ program
   .option('-s, --status <string>', 'Filter by status (e.g., pending, completed)')
   .option('-p, --priority <string>', 'Filter by priority (low, medium, high)')
   .option('-c, --category <id>', 'Filter by category ID')
-  .option('--due <date>', 'Filter by due date (YYYY-MM-DD)')
-  .option('--remind <date>', 'Filter by remind date (YYYY-MM-DD)')
+  .option('--due <date>', 'Filter by due date in UTC (YYYY-MM-DD)')
+  .option('--remind <date>', 'Filter by remind date in UTC (YYYY-MM-DD)')
   .option('-t, --tag <name>', 'Filter by tag name')
   .action(async (options) => {
     const params = new URLSearchParams();
@@ -79,6 +79,7 @@ program
         Priority: t.priority,
         Due: t.due_date || '-',
         Remind: t.remind_at || '-',
+        Completed: t.completed_at || '-',
         Category: t.category_name || '-',
         Tags: t.tags && t.tags.length > 0 ? t.tags.map(tag => tag.name).join(', ') : '-'
       })));
@@ -91,8 +92,8 @@ program
   .option('-d, --desc <string>', 'Description')
   .option('-p, --priority <string>', 'Priority (low, medium, high)')
   .option('-c, --category <id>', 'Category ID')
-  .option('--due <datetime>', 'Due date (accepts YYYY-MM-DD HH:mm:ss or ISO format)')
-  .option('--remind <datetime>', 'Remind at date (accepts YYYY-MM-DD HH:mm:ss or ISO format)')
+  .option('--due <datetime>', 'Due date in UTC (accepts YYYY-MM-DD HH:mm:ss or ISO format)')
+  .option('--remind <datetime>', 'Remind at date in UTC (accepts YYYY-MM-DD HH:mm:ss or ISO format)')
   .option('--rule <rule>', 'Recurring rule (daily, weekly, monthly)')
   .option('--tags <names>', 'Comma separated tag names (e.g. 紧急,工作)')
   .option('--source <string>', 'Source of the task (e.g., user, openclaw)')

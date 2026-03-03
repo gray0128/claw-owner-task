@@ -45,10 +45,10 @@ enum Commands {
         /// Filter by category ID
         #[arg(short, long = "category")]
         category: Option<String>,
-        /// Filter by due date (YYYY-MM-DD)
+        /// Filter by due date in UTC (YYYY-MM-DD)
         #[arg(long = "due")]
         due: Option<String>,
-        /// Filter by remind date (YYYY-MM-DD)
+        /// Filter by remind date in UTC (YYYY-MM-DD)
         #[arg(long = "remind")]
         remind: Option<String>,
         /// Filter by tag name
@@ -69,10 +69,10 @@ enum Commands {
         /// Category ID
         #[arg(short, long = "category")]
         category: Option<String>,
-        /// Due date (accepts YYYY-MM-DD HH:mm:ss or ISO format)
+        /// Due date in UTC (accepts YYYY-MM-DD HH:mm:ss or ISO format)
         #[arg(long = "due")]
         due: Option<String>,
-        /// Remind at date (accepts YYYY-MM-DD HH:mm:ss or ISO format)
+        /// Remind at date in UTC (accepts YYYY-MM-DD HH:mm:ss or ISO format)
         #[arg(long = "remind")]
         remind: Option<String>,
         /// Recurring rule (daily, weekly, monthly)
@@ -108,10 +108,10 @@ enum Commands {
         /// New category ID
         #[arg(short, long = "category")]
         category: Option<String>,
-        /// New due date (accepts YYYY-MM-DD HH:mm:ss or ISO format)
+        /// New due date in UTC (accepts YYYY-MM-DD HH:mm:ss or ISO format)
         #[arg(long = "due")]
         due: Option<String>,
-        /// New remind at date (accepts YYYY-MM-DD HH:mm:ss or ISO format)
+        /// New remind at date in UTC (accepts YYYY-MM-DD HH:mm:ss or ISO format)
         #[arg(long = "remind")]
         remind: Option<String>,
         /// New recurring rule (daily, weekly, monthly)
@@ -243,6 +243,8 @@ struct TaskRow {
     due: String,
     #[tabled(rename = "Remind")]
     remind: String,
+    #[tabled(rename = "Completed")]
+    completed: String,
     #[tabled(rename = "Category")]
     category: String,
     #[tabled(rename = "Tags")]
@@ -363,6 +365,7 @@ fn main() {
                                 priority: val_str(t, "priority"),
                                 due: val_str(t, "due_date"),
                                 remind: val_str(t, "remind_at"),
+                                completed: val_str(t, "completed_at"),
                                 category: val_str(t, "category_name"),
                                 tags: tags_display,
                             }
