@@ -1,4 +1,5 @@
 mod api;
+mod update;
 
 use api::ApiClient;
 use chrono::NaiveDateTime;
@@ -14,7 +15,7 @@ use tabled::{Table, Tabled};
 #[derive(Parser)]
 #[command(
     name = "claw-task",
-    version = "1.3.2",
+    version = env!("CARGO_PKG_VERSION"),
     about = "Claw Owner Task CLI - A minimalist task manager for humans and AI."
 )]
 struct Cli {
@@ -164,6 +165,12 @@ enum Commands {
         #[arg(short, long)]
         color: Option<String>,
     },
+
+    /// Upgrade the CLI to the latest version
+    Upgrade,
+
+    #[command(hide = true)]
+    InternalCheckUpdate,
 }
 
 // ---------------------------------------------------------------------------
@@ -285,9 +292,26 @@ fn val_str(v: &Value, key: &str) -> String {
 fn main() {
     let cli = Cli::parse();
     let json_mode = cli.json;
+
+    if let Commands::InternalCheckUpdate = cli.command {
+        update::perform_internal_check();
+        return;
+    }
+
+    if let Commands::Upgrade = cli.command {
+        if let Err(e) = update::perform_upgrade(json_mode) {
+            exit_with_error(json_mode, &e);
+        } else if json_mode {
+            println!("{}", serde_json::to_string_pretty(&json!({"success": true})).unwrap());
+        }
+        return;
+    }
+
     let client = ApiClient::new();
 
     match cli.command {
+        Commands::InternalCheckUpdate | Commands::Upgrade => unreachable!(),
+
         // --- Info ---
         Commands::Info => {
             let data = client.info();
@@ -611,6 +635,9 @@ fn main() {
             }
         }
     }
+
+    update::check_update_info(json_mode);
+    update::trigger_background_check();
 }
 
 #[cfg(test)]
