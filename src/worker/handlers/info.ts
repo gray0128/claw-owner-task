@@ -4,7 +4,7 @@ import { Bindings } from '../index';
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.get('/', async (c) => {
-  const userTimezone = c.get('userTimezone' as any);
+  const userTimezone = (c.get as any)('userTimezone') || 'Asia/Shanghai';
 
   // Fetch all categories
   const categoriesResult = await c.env.DB.prepare('SELECT id, name, color FROM categories').all();

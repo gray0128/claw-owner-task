@@ -27,7 +27,7 @@ INSERT INTO tags (id, name) VALUES
 
 -- 3. 初始化任务 (包含 AI 元数据、来源和周期规则)
 -- 设置明确的 id 以便与 api_tests.http 脚本对应
-INSERT INTO tasks (id, title, description, status, priority, category_id, source, metadata, recurring_rule, due_date, remind_at, reminded) VALUES 
+INSERT INTO tasks (id, title, description, status, priority, category_id, source, metadata, recurring_rule, due_date, remind_at, reminded, completed_at) VALUES 
 (
   1,
   '购买咖啡豆', 
@@ -41,7 +41,8 @@ INSERT INTO tasks (id, title, description, status, priority, category_id, source
   'none', 
   '2026-03-01T10:00:00.000Z', 
   '2026-03-01T09:45:00.000Z',
-  0
+  0,
+  NULL
 ),
 (
   2,
@@ -55,7 +56,8 @@ INSERT INTO tasks (id, title, description, status, priority, category_id, source
   'weekly', 
   '2026-03-02T09:00:00.000Z', 
   '2026-03-02T08:30:00.000Z',
-  0
+  0,
+  NULL
 ),
 (
   3,
@@ -69,7 +71,8 @@ INSERT INTO tasks (id, title, description, status, priority, category_id, source
   'daily', 
   '2026-03-01T22:00:00.000Z', 
   '2026-03-01T21:00:00.000Z',
-  0
+  0,
+  NULL
 ),
 (
   4,
@@ -83,7 +86,8 @@ INSERT INTO tasks (id, title, description, status, priority, category_id, source
   'none', 
   '2026-02-28T10:00:00.000Z', 
   NULL,
-  0
+  0,
+  NULL
 ),
 (
   5,
@@ -97,7 +101,8 @@ INSERT INTO tasks (id, title, description, status, priority, category_id, source
   'none', 
   '2026-02-25T10:00:00.000Z', 
   NULL,
-  0
+  0,
+  '2026-02-26T10:00:00.000Z'
 );
 
 -- 4. 建立任务与标签的关联

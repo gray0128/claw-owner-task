@@ -7,6 +7,42 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Helper to format response
 const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
 
+// Time format validation
+const isValidDate = (dateStr: string) => {
+  if (!dateStr || typeof dateStr !== 'string') return true;
+  const isoRegex = /^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/;
+  return isoRegex.test(dateStr) && !isNaN(Date.parse(dateStr));
+};
+
+const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
+  if (!d || typeof d !== 'string') return d;
+  // If it has a timezone identifier (Z, +HH:mm, -HH:mm), parse it directly
+  if (/[Z]|[+-]\d{2}:\d{2}$/.test(d)) {
+    return new Date(d).toISOString();
+  }
+  // Floating time: assume it is in the configured USER_TIMEZONE
+  let normalized = d.replace(' ', 'T');
+  if (normalized.length === 10) normalized += 'T00:00:00';
+  if (normalized.length === 16) normalized += ':00';
+
+  try {
+    // Use Intl to get the offset for the specified timezone at that date
+    const date = new Date(normalized + 'Z');
+    const localDateStr = date.toLocaleString('en-US', { timeZone, hour12: false });
+    const utcDateStr = date.toLocaleString('en-US', { timeZone: 'UTC', hour12: false });
+    const localDate = new Date(localDateStr);
+    const utcDate = new Date(utcDateStr);
+    const offsetMin = (localDate.getTime() - utcDate.getTime()) / 60000;
+    
+    const hours = Math.floor(Math.abs(offsetMin) / 60).toString().padStart(2, '0');
+    const mins = (Math.abs(offsetMin) % 60).toString().padStart(2, '0');
+    const sign = offsetMin >= 0 ? '+' : '-';
+    return new Date(normalized + sign + hours + ':' + mins).toISOString();
+  } catch (e) {
+    return new Date(d).toISOString();
+  }
+};
+
 // GET /api/tasks - List tasks
 app.get('/', async (c) => {
   const q = c.req.query('q');
@@ -112,47 +148,11 @@ app.post('/', async (c) => {
 
   if (!title) return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'Title is required' }), 400);
 
-  // Time format validation
-  const isValidDate = (dateStr: string) => {
-    if (!dateStr || typeof dateStr !== 'string') return true;
-    const isoRegex = /^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/;
-    return isoRegex.test(dateStr) && !isNaN(Date.parse(dateStr));
-  };
-
-  const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
-    if (!d || typeof d !== 'string') return d;
-    // If it has a timezone identifier (Z, +HH:mm, -HH:mm), parse it directly
-    if (/[Z]|[+-]\d{2}:\d{2}$/.test(d)) {
-      return new Date(d).toISOString();
-    }
-    // Floating time: assume it is in the configured USER_TIMEZONE
-    let normalized = d.replace(' ', 'T');
-    if (normalized.length === 10) normalized += 'T00:00:00';
-    if (normalized.length === 16) normalized += ':00';
-
-    try {
-      // Use Intl to get the offset for the specified timezone at that date
-      const date = new Date(normalized + 'Z');
-      const localDateStr = date.toLocaleString('en-US', { timeZone, hour12: false });
-      const utcDateStr = date.toLocaleString('en-US', { timeZone: 'UTC', hour12: false });
-      const localDate = new Date(localDateStr);
-      const utcDate = new Date(utcDateStr);
-      const offsetMin = (localDate.getTime() - utcDate.getTime()) / 60000;
-      
-      const hours = Math.floor(Math.abs(offsetMin) / 60).toString().padStart(2, '0');
-      const mins = (Math.abs(offsetMin) % 60).toString().padStart(2, '0');
-      const sign = offsetMin >= 0 ? '+' : '-';
-      return new Date(normalized + sign + hours + ':' + mins).toISOString();
-    } catch (e) {
-      return new Date(d).toISOString();
-    }
-  };
-
   if (!isValidDate(due_date) || !isValidDate(remind_at)) {
     return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'due_date and remind_at must be valid ISO or YYYY-MM-DD strings' }), 400);
   }
 
-  const userTimezone = c.get('userTimezone' as any) || 'Asia/Shanghai';
+  const userTimezone = (c.get as any)('userTimezone') || 'Asia/Shanghai';
   const finalDueDate = normalizeDate(due_date, userTimezone);
   const finalRemindAt = normalizeDate(remind_at, userTimezone);
 
@@ -234,11 +234,11 @@ app.put('/:id/complete', async (c) => {
       nextRemindAt = calculateNextRemindAt(task.due_date as string, task.remind_at as string, nextDueDate);
     }
     
-    query = `UPDATE tasks SET status = 'pending', due_date = ?, remind_at = ?, reminded = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    query = `UPDATE tasks SET status = 'pending', due_date = ?, remind_at = ?, reminded = 0, updated_at = CURRENT_TIMESTAMP, completed_at = NULL WHERE id = ?`;
     params = [nextDueDate, nextRemindAt, id];
   } else {
     // Normal completion
-    query = `UPDATE tasks SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    query = `UPDATE tasks SET status = 'completed', updated_at = CURRENT_TIMESTAMP, completed_at = CURRENT_TIMESTAMP WHERE id = ?`;
     params = [id];
   }
 
@@ -261,19 +261,12 @@ app.put('/:id', async (c) => {
   const existingTask = await c.env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
   if (!existingTask) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
 
-  // Time format validation
-  const isValidDate = (dateStr: string) => {
-    if (!dateStr || typeof dateStr !== 'string') return true;
-    const isoRegex = /^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/;
-    return isoRegex.test(dateStr) && !isNaN(Date.parse(dateStr));
-  };
-
   if ((body.due_date !== undefined && !isValidDate(body.due_date)) || 
       (body.remind_at !== undefined && !isValidDate(body.remind_at))) {
     return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'due_date and remind_at must be valid ISO or YYYY-MM-DD strings' }), 400);
   }
 
-  const userTimezone = c.get('userTimezone' as any) || 'Asia/Shanghai';
+  const userTimezone = (c.get as any)('userTimezone') || 'Asia/Shanghai';
   const updates: string[] = [];
   const params: any[] = [];
 
@@ -284,6 +277,13 @@ app.put('/:id', async (c) => {
       let value = body[field];
       if ((field === 'due_date' || field === 'remind_at') && value !== null) {
         value = normalizeDate(value, userTimezone);
+      }
+      if (field === 'status') {
+        if (value === 'completed') {
+          updates.push("completed_at = CURRENT_TIMESTAMP");
+        } else if (value === 'pending') {
+          updates.push("completed_at = NULL");
+        }
       }
       updates.push(`${field} = ?`);
       params.push(value);

@@ -93,6 +93,7 @@ async function loadTasks() {
             <span>Due: ${formatDate(task.due_date)}</span> | 
             <span>Remind: ${formatDate(task.remind_at)}</span>
             ${task.category_name ? ` | <span>Category: ${task.category_name}</span>` : ''}
+            ${task.completed_at ? `<br><span style="color: #10b981;">Completed: ${formatDate(task.completed_at)}</span>` : ''}
           </div>
         </div>
         <div class="task-actions">
