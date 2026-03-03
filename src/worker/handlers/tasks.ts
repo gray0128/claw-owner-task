@@ -78,6 +78,33 @@ app.get('/', async (c) => {
   return c.json(response(true, formattedResults));
 });
 
+// GET /api/tasks/:id - Get single task
+app.get('/:id', async (c) => {
+  const id = c.req.param('id');
+  const query = `
+    SELECT t.*, c.name as category_name, c.color as category_color,
+    (
+      SELECT json_group_array(json_object('id', tg.id, 'name', tg.name))
+      FROM task_tags tt JOIN tags tg ON tt.tag_id = tg.id
+      WHERE tt.task_id = t.id
+    ) as tags
+    FROM tasks t
+    LEFT JOIN categories c ON t.category_id = c.id
+    WHERE t.id = ?
+  `;
+  
+  const result = await c.env.DB.prepare(query).bind(id).first();
+  if (!result) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
+
+  const formattedResult = {
+    ...result,
+    tags: result.tags ? JSON.parse(result.tags as string) : [],
+    metadata: result.metadata ? JSON.parse(result.metadata as string) : null
+  };
+
+  return c.json(response(true, formattedResult));
+});
+
 // POST /api/tasks - Create task
 app.post('/', async (c) => {
   const body = await c.req.json();

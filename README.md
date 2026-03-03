@@ -153,6 +153,13 @@ cp -r skills/claw-task ~/.openclaw/skills/
 ```
 *(你也可以通过 OpenCLaw 内部的定时 Automation Hook 来直接调用此命令进行轮询。)*
 
+## 项目文档
+
+- [需求说明](docs/需求说明.md)
+- [技术架构](docs/技术架构.md)
+- [开发计划](docs/开发计划.md)
+- [缺陷修复记录](docs/缺陷修复记录.md)
+
 ## 开发者指令
 
 - `npm run dev`: 本地运行 Cloudflare Worker 开发服务器

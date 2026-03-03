@@ -34,6 +34,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **CLI (Rust)**: `cd cli-rust && cargo run -- [command]` 或编译后直接运行二进制
 - **编译 Rust 版**: `cd cli-rust && cargo build --release`
 
+## 缺陷修复与已知问题
+
+本项目维护了详细的缺陷修复记录，包含环境配置、时间解析等常见问题的解决方案：
+- [缺陷修复记录](docs/缺陷修复记录.md)
+
 ## 开发注意事项
 
 - **前端**: 使用浏览器原生 ES Modules，不要添加 npm/packaging 相关的构建配置。
@@ -44,5 +49,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 ---
-**版本**: 1.3.0
-**更新时间**: 2026-03-02 13:21:00
+**版本**: 1.5.1
+**更新时间**: 2026-03-03 13:22:00

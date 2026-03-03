@@ -8,7 +8,7 @@ export function calculateNextOccurrence(currentDueDateStr: string | null, rule: 
   }
 
   // Parse current UTC due date
-  const date = new Date(currentDueDateStr + 'Z');
+  const date = new Date(currentDueDateStr.endsWith('Z') ? currentDueDateStr : currentDueDateStr + 'Z');
   if (isNaN(date.getTime())) {
     return null;
   }
@@ -35,9 +35,10 @@ export function calculateNextOccurrence(currentDueDateStr: string | null, rule: 
  * Calculates the next remind_at date based on the new due date and the original offset.
  */
 export function calculateNextRemindAt(currentDueDateStr: string, currentRemindAtStr: string, nextDueDateStr: string): string | null {
-  const currentDueDate = new Date(currentDueDateStr + 'Z');
-  const currentRemindAt = new Date(currentRemindAtStr + 'Z');
-  const nextDueDate = new Date(nextDueDateStr + 'Z');
+  const parseUTC = (d: string) => new Date(d.endsWith('Z') ? d : d + 'Z');
+  const currentDueDate = parseUTC(currentDueDateStr);
+  const currentRemindAt = parseUTC(currentRemindAtStr);
+  const nextDueDate = parseUTC(nextDueDateStr);
 
   if (isNaN(currentDueDate.getTime()) || isNaN(currentRemindAt.getTime()) || isNaN(nextDueDate.getTime())) {
     return null;
