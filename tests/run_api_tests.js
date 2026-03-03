@@ -152,6 +152,37 @@ test('【基础功能】F-06: 修改任务 (全字段及元数据)', async () =>
   assert.strictEqual(clearCheck.data.remind_at, null, '提醒时间应成功清除');
 });
 
+test('【基础功能】F-06-Remind: 单独更新提醒时间', async () => {
+  const taskId = process.env.TEST_TASK_ID;
+  assert.ok(taskId, '未能获取测试任务 ID');
+
+  const newRemindAt = '2026-03-11T15:45:00.000Z';
+
+  // 1. 单独设置提醒时间
+  const { status: updateStatus } = await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ remind_at: newRemindAt })
+  });
+  assert.strictEqual(updateStatus, 200, '单独更新提醒时间应成功');
+
+  // 2. 验证更新结果
+  const { body: checkBody } = await apiFetch(`/tasks/${taskId}`);
+  assert.strictEqual(checkBody.data.remind_at, newRemindAt, '提醒时间应更新为指定值');
+  
+  // 3. 验证其他字段未受影响 (对比 F-06 最后的标题)
+  assert.strictEqual(checkBody.data.title, '深度修改后的任务', '标题不应因更新提醒时间而改变');
+
+  // 4. 将提醒时间修改为另一个值
+  const anotherRemindAt = '2026-03-12T08:00:00.000Z';
+  await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ remind_at: anotherRemindAt })
+  });
+  
+  const { body: finalCheck } = await apiFetch(`/tasks/${taskId}`);
+  assert.strictEqual(finalCheck.data.remind_at, anotherRemindAt, '提醒时间应能多次修改');
+});
+
 test('【基础功能】F-03: 更新任务状态至 completed', async () => {
   const taskId = process.env.TEST_TASK_ID;
   assert.ok(taskId, '未能获取测试任务 ID');
