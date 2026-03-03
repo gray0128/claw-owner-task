@@ -96,33 +96,60 @@ test('【异常测试】F-08: 标签格式校验测试 (包含特殊字符)', as
   assert.strictEqual(status, 400, '包含特殊字符的标签名应被拒绝，返回 400 错误');
 });
 
-test('【基础功能】F-06: 修改任务', async () => {
+test('【基础功能】F-06: 修改任务 (全字段及元数据)', async () => {
   const taskId = process.env.TEST_TASK_ID;
-  assert.ok(taskId, '未能获取测试任务 ID，可能是创建任务用例失败');
+  assert.ok(taskId, '未能获取测试任务 ID');
 
+  // 1. 测试全字段更新，包括元数据和标签
   const payload = {
-    title: '修改后的自动化测试任务',
-    priority: 'low',
-    tags: ['已修改'],
-    due_date: '2026-03-06T12:00:00.000Z',
-    remind_at: '2026-03-06T11:30:00.000Z'
+    title: '深度修改后的任务',
+    description: '新的描述内容',
+    priority: 'high',
+    status: 'in_progress',
+    tags: ['标签A', '标签B'],
+    metadata: { "ref": "updated_ref_001", "version": 2 },
+    due_date: '2026-03-10T10:00:00.000Z',
+    remind_at: '2026-03-10T09:00:00.000Z'
   };
 
   const { status } = await apiFetch(`/tasks/${taskId}`, {
     method: 'PUT',
     body: JSON.stringify(payload)
   });
-  
-  assert.strictEqual(status, 200, '应该成功修改任务');
+  assert.strictEqual(status, 200);
 
-  // 验证修改是否生效
-  const { body: checkBody } = await apiFetch(`/tasks?q=修改后的自动化测试任务`);
-  const updatedTask = checkBody.data.find(t => t.id === parseInt(taskId));
+  // 验证全字段修改
+  const { body: checkBody } = await apiFetch(`/tasks/${taskId}`);
+  const task = checkBody.data;
+  assert.strictEqual(task.title, payload.title);
+  assert.strictEqual(task.description, payload.description);
+  assert.strictEqual(task.priority, payload.priority);
+  assert.strictEqual(task.status, payload.status);
+  assert.strictEqual(task.due_date, payload.due_date);
+  assert.strictEqual(task.remind_at, payload.remind_at);
+  assert.deepStrictEqual(task.metadata, payload.metadata);
+  assert.ok(task.tags.some(t => t.name === '标签A'));
+  assert.ok(task.tags.some(t => t.name === '标签B'));
+
+  // 2. 测试部分更新：仅修改优先级，确保其他字段不变
+  await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ priority: 'low' })
+  });
   
-  assert.ok(updatedTask, '修改后的任务应能被检索到');
-  assert.strictEqual(updatedTask.priority, 'low', '优先级应更新为 low');
-  assert.strictEqual(updatedTask.due_date, '2026-03-06T12:00:00.000Z', '截止时间应更新');
-  assert.strictEqual(updatedTask.remind_at, '2026-03-06T11:30:00.000Z', '提醒时间应更新');
+  const { body: partialCheck } = await apiFetch(`/tasks/${taskId}`);
+  assert.strictEqual(partialCheck.data.priority, 'low');
+  assert.strictEqual(partialCheck.data.title, payload.title, '标题不应改变');
+  assert.strictEqual(partialCheck.data.due_date, payload.due_date, '截止时间不应改变');
+
+  // 3. 测试清除可选字段：将 remind_at 设为 null
+  await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ remind_at: null })
+  });
+  
+  const { body: clearCheck } = await apiFetch(`/tasks/${taskId}`);
+  assert.strictEqual(clearCheck.data.remind_at, null, '提醒时间应成功清除');
 });
 
 test('【基础功能】F-03: 更新任务状态至 completed', async () => {
@@ -137,29 +164,24 @@ test('【基础功能】F-03: 更新任务状态至 completed', async () => {
 });
 
 test('【基础功能】F-07: 任务列表多维度筛选', async () => {
-  // 此时数据库中应该有刚刚完成的任务
-  const { status, body } = await apiFetch('/tasks?status=completed&priority=low&tag_name=已修改');
+  // F-06 修改后：priority=low, tags=[标签A, 标签B]
+  // F-03 修改后：status=completed
+  const { status, body } = await apiFetch('/tasks?status=completed&priority=low&tag_name=标签A');
   
   assert.strictEqual(status, 200);
   assert.ok(Array.isArray(body.data), '应该返回任务数组');
   
   const foundTask = body.data.find(t => t.id === parseInt(process.env.TEST_TASK_ID));
-  assert.ok(foundTask, '通过多维度筛选应能找到之前创建并修改的任务');
+  assert.ok(foundTask, '通过多维度筛选应能找到之前深度修改的任务');
 });
 
-test('【基础功能】F-07: 按截止日期和提醒日期筛选', async () => {
-  // 使用之前修改的任务日期进行筛选
-  const dueDate = '2026-03-06'; // DATE(?) 只比较日期部分
+test('【基础功能】F-07: 按截止日期筛选', async () => {
+  // F-06 设置：due_date=2026-03-10T10:00:00.000Z
+  const dueDate = '2026-03-10';
   const { status, body } = await apiFetch(`/tasks?due_date=${dueDate}`);
   
   assert.strictEqual(status, 200);
   assert.ok(body.data.some(t => t.id === parseInt(process.env.TEST_TASK_ID)), '应该能根据截止日期筛选到任务');
-
-  const remindDate = '2026-03-06';
-  const { status: rStatus, body: rBody } = await apiFetch(`/tasks?remind_at=${remindDate}`);
-  
-  assert.strictEqual(rStatus, 200);
-  assert.ok(rBody.data.some(t => t.id === parseInt(process.env.TEST_TASK_ID)), '应该能根据提醒日期筛选到任务');
 });
 
 test('【周期逻辑】REC-01: 完成每日任务 (daily) 并验证下次时间', async () => {
