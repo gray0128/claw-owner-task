@@ -13,8 +13,8 @@
 2. **全局可用：**
    ```bash
    # macOS/Linux 示例
-   chmod +x claw-task-macos
-   sudo mv claw-task-macos /usr/local/bin/claw-task
+   chmod +x claw-task-macos-arm64
+   sudo mv your-claw-task-macos-arm64-path /usr/local/bin/claw-task
    ```
 
 3. **验证安装：**
@@ -63,6 +63,17 @@ export TASK_API_URL="https://your-worker-subdomain.workers.dev/api"
 export TASK_API_KEY="your_secret_api_key"
 export USER_TIMEZONE="Asia/Shanghai"
 ```
+
+## 时间处理与时区规范
+
+本系统采用 **“前端转换、后端存储 UTC、数据库原生对比、服务端时区渲染”** 的高可靠时间处理方案。其核心设计思想是 **“以服务端配置为准”**：
+
+1. **强制 UTC 标准化**：后端 API 在接收到 `due_date` 或 `remind_at` 时，会自动将其强制转换为标准的 ISO UTC 格式存入数据库。
+2. **时区识别与注入 (以服务端 Worker 配置为准)**：
+   - **显式时区**：如果输入字符串自带时区标识（如 `Z` 或 `+08:00`），后端将按该时区解析。
+   - **漂浮时间 (Floating Time)**：如果输入字符串**未标识时区**（如 `2026-03-09 10:00:00`），系统将优先使用 **服务端 Worker 配置的 `USER_TIMEZONE`** 进行解析；若未配置，缺省为 **北京时间 (`Asia/Shanghai`)**。
+   - **多端一致性**：即便本地 CLI 的时区设置与服务端 Worker 不同，只要输入是不带时区的字符串，系统也会统一按照服务端定义的基准时区进行校准入库。
+3. **Web 展示逻辑**：Web 界面会通过 API 获取服务端的 `USER_TIMEZONE` 配置，并以此为基准格式化展示所有任务时间。这意味着无论您在全球何处访问，看到的任务时间都将保持一致，避免了“因出差导致任务到期时间看起来变了”的问题。
 
 ## Cloudflare Worker 部署与配置
 

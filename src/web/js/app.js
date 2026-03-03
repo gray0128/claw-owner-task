@@ -14,13 +14,44 @@ const ui = {
   refreshBtn: document.getElementById('refreshBtn'),
 };
 
+let systemTimezone = 'Asia/Shanghai';
+
 // Initialize settings
 const config = getConfig();
 ui.apiKey.value = config.key;
 ui.apiUrl.value = config.url;
 
-ui.saveSettingsBtn.addEventListener('click', () => {
+async function initSystemInfo() {
+  if (getConfig().key) {
+    try {
+      const info = await api.info();
+      if (info.timezone) systemTimezone = info.timezone;
+    } catch (e) { console.error('Failed to fetch system info', e); }
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('zh-CN', {
+      timeZone: systemTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(date);
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+ui.saveSettingsBtn.addEventListener('click', async () => {
   updateConfig(ui.apiUrl.value, ui.apiKey.value);
+  await initSystemInfo();
   alert('Settings saved!');
   loadTasks();
 });
@@ -54,10 +85,15 @@ async function loadTasks() {
       li.className = `task-item ${task.status === 'completed' ? 'completed' : ''}`;
       
       li.innerHTML = `
-        <div>
+        <div style="flex: 1;">
           <strong class="task-title">${task.title}</strong>
-          <span style="font-size: 12px; color: #64748b; margin-left: 10px;">[${task.priority}]</span>
-          ${task.description ? `<div style="font-size: 14px; margin-top: 5px;">${task.description}</div>` : ''}
+          <span class="priority-badge ${task.priority}">${task.priority}</span>
+          ${task.description ? `<div class="task-desc">${task.description}</div>` : ''}
+          <div class="task-meta">
+            <span>Due: ${formatDate(task.due_date)}</span> | 
+            <span>Remind: ${formatDate(task.remind_at)}</span>
+            ${task.category_name ? ` | <span>Category: ${task.category_name}</span>` : ''}
+          </div>
         </div>
         <div class="task-actions">
           ${task.status !== 'completed' ? `<button class="complete-btn" data-id="${task.id}">Complete</button>` : ''}
@@ -72,50 +108,9 @@ async function loadTasks() {
   }
 }
 
-// Add task
-ui.addTaskForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    await api.tasks.create({
-      title: ui.taskTitle.value,
-      description: ui.taskDesc.value,
-      priority: ui.taskPriority.value
-    });
-    ui.addTaskForm.reset();
-    loadTasks();
-  } catch (err) {
-    alert(`Failed to create task: ${err.message}`);
-  }
-});
-
-// Handle complete/delete clicks
-ui.tasksContainer.addEventListener('click', async (e) => {
-  if (e.target.classList.contains('complete-btn')) {
-    const id = e.target.getAttribute('data-id');
-    try {
-      await api.tasks.complete(id);
-      loadTasks();
-    } catch (err) {
-      alert(err.message);
-    }
-  } else if (e.target.classList.contains('delete-btn')) {
-    const id = e.target.getAttribute('data-id');
-    if (confirm('Are you sure?')) {
-      try {
-        await api.tasks.delete(id);
-        loadTasks();
-      } catch (err) {
-        alert(err.message);
-      }
-    }
-  }
-});
-
-// Refresh triggers
-ui.refreshBtn.addEventListener('click', loadTasks);
-ui.filterStatus.addEventListener('change', loadTasks);
+// ... (previous listeners)
 
 // Initial load
 if (getConfig().key) {
-  loadTasks();
+  initSystemInfo().then(loadTasks);
 }

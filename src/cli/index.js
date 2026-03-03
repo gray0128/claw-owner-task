@@ -34,8 +34,7 @@ function parseDateStr(val) {
   if (isNaN(d.getTime())) {
     throw new Error(`Invalid date format for value: "${val}". Expected YYYY-MM-DD or ISO format.`);
   }
-  const pad = (n) => n.toString().padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return d.toISOString();
 }
 
 // --- Info ---

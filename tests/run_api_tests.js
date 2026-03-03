@@ -216,6 +216,27 @@ test('【基础功能】F-06-DueDate: 单独更新截止日期', async () => {
   assert.strictEqual(finalCheck.data.due_date, anotherDueDate, '截止日期应能多次修改');
 });
 
+test('【基础功能】F-06-CLI-Format: 使用 CLI 风格的时间格式 (YYYY-MM-DD HH:mm:ss)', async () => {
+  const taskId = process.env.TEST_TASK_ID;
+  assert.ok(taskId, '未能获取测试任务 ID');
+
+  const cliDueDate = '2026-03-09 10:00:00';
+  const cliRemindAt = '2026-03-09 09:30:00';
+
+  const { status } = await apiFetch(`/tasks/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ 
+      due_date: cliDueDate,
+      remind_at: cliRemindAt
+    })
+  });
+  assert.strictEqual(status, 200, '应该支持 CLI 发送的 YYYY-MM-DD HH:mm:ss 格式');
+
+  // 验证返回的格式 (后端可能在存储或返回时进行了转换，但至少请求应成功)
+  const { body: checkBody } = await apiFetch(`/tasks/${taskId}`);
+  assert.ok(checkBody.success);
+});
+
 test('【基础功能】F-03: 更新任务状态至 completed', async () => {
   const taskId = process.env.TEST_TASK_ID;
   assert.ok(taskId, '未能获取测试任务 ID');
