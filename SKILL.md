@@ -1,11 +1,11 @@
 ---
-name: claw-task-antigravity
+name: claw-task
 description: AI优先的任务管理系统 CLI。当用户要求查询、添加、完成或管理个人任务时，使用本 skill 调用 `claw-task` 命令。
 ---
 
-# claw-task CLI 使用指南（Antigravity 专用）
+# claw-task CLI 使用指南
 
-本 skill 面向 **Antigravity / Claude Code** 等本地 AI coding assistant，通过 `run_command` 工具调用 `claw-task` CLI 与任务管理系统交互。
+本 skill 面向 **Antigravity / Claude Code / openclaw / 以及各种其他 claw** 等本地 AI coding assistant，通过 `run_command` 工具调用 `claw-task` CLI 与任务管理系统交互。
 
 ## 前置条件
 
