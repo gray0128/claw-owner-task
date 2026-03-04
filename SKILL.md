@@ -118,7 +118,7 @@ claw-task update 5 --metadata '{"context": "更新说明"}' --json
 
 ### 查询推送日志 (logs)
 ```bash
-# 查询最近 50 条推送日志
+# 查询最近 5 条推送日志
 claw-task logs --json
 
 # 查询最近 10 条日志

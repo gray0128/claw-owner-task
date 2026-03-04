@@ -147,7 +147,7 @@ enum Commands {
 
     /// Query recent Bark push logs (recent 7 days)
     Logs {
-        /// Number of logs to fetch (1-100), default: 50
+        /// Number of logs to fetch (1-100), default: 5
         #[arg(short = 'n', long)]
         limit: Option<String>,
         /// Filter logs by a specific task ID

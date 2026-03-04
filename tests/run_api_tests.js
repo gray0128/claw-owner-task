@@ -397,6 +397,7 @@ test('【日志查询】L-04: limit 下限边界值校验 (limit=0 应被校正)
   assert.strictEqual(status, 200, 'limit=0 不应导致错误');
   assert.ok(body.success, '应正常返回成功响应');
   assert.ok(Array.isArray(body.data), '应返回日志数组');
+  assert.ok(body.data.length <= 5, '默认条目数应为 5');
 });
 
 test('【日志查询】L-05: limit 上限边界值校验 (limit=200 应被截断为 100)', async () => {

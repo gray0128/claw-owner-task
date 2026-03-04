@@ -5,11 +5,10 @@ const app = new Hono<{ Bindings: Bindings }>();
 const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
 
 app.get('/bark', async (c) => {
-    const limitStr = c.req.query('limit') || '50';
+    const limitStr = c.req.query('limit') || '5';
     const taskIdStr = c.req.query('task_id');
-
     let limit = parseInt(limitStr);
-    if (isNaN(limit) || limit < 1) limit = 50;
+    if (isNaN(limit) || limit < 1) limit = 5;
     if (limit > 100) limit = 100;
 
     try {

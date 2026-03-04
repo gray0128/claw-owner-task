@@ -226,7 +226,7 @@ program
 program
   .command('logs')
   .description('Query recent Bark push logs (recent 7 days)')
-  .option('-n, --limit <number>', 'Number of logs to fetch (1-100), default: 50')
+  .option('-n, --limit <number>', 'Number of logs to fetch (1-100), default: 5')
   .option('-t, --task-id <id>', 'Filter logs by a specific task ID')
   .action(async (options) => {
     try {
