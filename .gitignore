@@ -36,3 +36,6 @@ target/
 
 # Binary outputs
 bin/
+
+# Development logs
+.dev_logs
