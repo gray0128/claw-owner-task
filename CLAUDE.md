@@ -41,6 +41,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 开发注意事项
 
+- **敏感信息保护**: 配置文件（如 `wrangler.toml`、`.dev.vars`）中严禁出现生产环境的敏感信息（如真实的 `database_id`、`TASK_API_KEY`、`BARK_URL` 等）。每次提交代码前必须检查，确保不会将敏感数据泄露到版本控制中。
 - **前端**: 使用浏览器原生 ES Modules，不要添加 npm/packaging 相关的构建配置。
 - **校验**: 保持 API 层的输入校验与 CLI 端的解析一致。
 - **测试**: 任何对核心 API 的修改都必须运行 `npm test` 确保无回归。
@@ -49,5 +50,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 ---
-**版本**: 1.7.0
-**更新时间**: 2026-03-04 22:38:00
+**版本**: 1.7.1
+**更新时间**: 2026-03-05 00:31:00

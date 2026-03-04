@@ -12,12 +12,14 @@ app.post('/check', async (c) => {
   }
 
   // Find pending tasks where remind_at is in the past (or now) and hasn't been reminded
+  // Use datetime() to normalize remind_at format for reliable comparison with CURRENT_TIMESTAMP
+  // (remind_at may be stored as ISO "2026-03-04T07:40:49.000Z" while CURRENT_TIMESTAMP is "2026-03-04 07:40:49")
   const query = `
     SELECT id, title, description, due_date
     FROM tasks 
     WHERE status = 'pending' 
       AND remind_at IS NOT NULL 
-      AND remind_at <= CURRENT_TIMESTAMP 
+      AND datetime(remind_at) <= datetime('now') 
       AND reminded = 0
   `;
   const { results } = await c.env.DB.prepare(query).all();

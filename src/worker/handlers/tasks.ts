@@ -14,11 +14,17 @@ const isValidDate = (dateStr: string) => {
   return isoRegex.test(dateStr) && !isNaN(Date.parse(dateStr));
 };
 
+// Helper: convert a Date object to SQLite-compatible "YYYY-MM-DD HH:MM:SS" UTC string
+const toSqliteUtc = (date: Date): string => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+};
+
 const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
   if (!d || typeof d !== 'string') return d;
   // If it has a timezone identifier (Z, +HH:mm, -HH:mm), parse it directly
   if (/[Z]|[+-]\d{2}:\d{2}$/.test(d)) {
-    return new Date(d).toISOString();
+    return toSqliteUtc(new Date(d));
   }
   // Floating time: assume it is in the configured USER_TIMEZONE
   let normalized = d.replace(' ', 'T');
@@ -33,13 +39,13 @@ const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
     const localDate = new Date(localDateStr);
     const utcDate = new Date(utcDateStr);
     const offsetMin = (localDate.getTime() - utcDate.getTime()) / 60000;
-    
+
     const hours = Math.floor(Math.abs(offsetMin) / 60).toString().padStart(2, '0');
     const mins = (Math.abs(offsetMin) % 60).toString().padStart(2, '0');
     const sign = offsetMin >= 0 ? '+' : '-';
-    return new Date(normalized + sign + hours + ':' + mins).toISOString();
+    return toSqliteUtc(new Date(normalized + sign + hours + ':' + mins));
   } catch (e) {
-    return new Date(d).toISOString();
+    return toSqliteUtc(new Date(d));
   }
 };
 
@@ -53,7 +59,7 @@ app.get('/', async (c) => {
   const categoryId = c.req.query('category_id');
   const dueDate = c.req.query('due_date');
   const remindAt = c.req.query('remind_at');
-  
+
   let query = `
     SELECT t.*, c.name as category_name, c.color as category_color,
     (
@@ -103,7 +109,7 @@ app.get('/', async (c) => {
   query += ` ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;
 
   const { results } = await c.env.DB.prepare(query).bind(...params).all();
-  
+
   // Parse tags JSON string to array
   const formattedResults = results.map(row => ({
     ...row,
@@ -128,7 +134,7 @@ app.get('/:id', async (c) => {
     LEFT JOIN categories c ON t.category_id = c.id
     WHERE t.id = ?
   `;
-  
+
   const result = await c.env.DB.prepare(query).bind(id).first();
   if (!result) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
 
@@ -157,21 +163,21 @@ app.post('/', async (c) => {
   const finalRemindAt = normalizeDate(remind_at, userTimezone);
 
   const metaString = metadata ? JSON.stringify(metadata) : null;
-  
+
   try {
     const insertResult = await c.env.DB.prepare(`
       INSERT INTO tasks (title, description, priority, category_id, source, metadata, recurring_rule, due_date, remind_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING id
     `).bind(
-      title, 
-      description || '', 
-      priority || 'medium', 
-      category_id || null, 
-      source || 'user', 
-      metaString, 
-      recurring_rule || 'none', 
-      finalDueDate || null, 
+      title,
+      description || '',
+      priority || 'medium',
+      category_id || null,
+      source || 'user',
+      metaString,
+      recurring_rule || 'none',
+      finalDueDate || null,
       finalRemindAt || null
     ).first();
 
@@ -179,15 +185,15 @@ app.post('/', async (c) => {
 
     if (taskId && tags && Array.isArray(tags)) {
       const nameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5]+$/;
-      
+
       for (const tagIdentifier of tags) {
         // Assume tagIdentifier might be a string (name) or number (id). We now prefer strings.
         const tagName = String(tagIdentifier).trim();
-        
+
         if (!nameRegex.test(tagName)) {
-           // Skip invalid tags or we could fail the whole request. Here we skip with a warning.
-           console.warn(`Skipping invalid tag name: ${tagName}`);
-           continue;
+          // Skip invalid tags or we could fail the whole request. Here we skip with a warning.
+          console.warn(`Skipping invalid tag name: ${tagName}`);
+          continue;
         }
 
         // Check if tag exists
@@ -204,7 +210,7 @@ app.post('/', async (c) => {
           // Ignore duplicate constraint errors if task is already tagged
           try {
             await c.env.DB.prepare('INSERT INTO task_tags (task_id, tag_id) VALUES (?, ?)').bind(taskId, tagId).run();
-          } catch(e) { /* ignore constraint violation */ }
+          } catch (e) { /* ignore constraint violation */ }
         }
       }
     }
@@ -218,7 +224,7 @@ app.post('/', async (c) => {
 // PUT /api/tasks/:id/complete - Complete a task
 app.put('/:id/complete', async (c) => {
   const id = c.req.param('id');
-  
+
   const task = await c.env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
   if (!task) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
 
@@ -233,7 +239,7 @@ app.put('/:id/complete', async (c) => {
     if (task.remind_at && nextDueDate) {
       nextRemindAt = calculateNextRemindAt(task.due_date as string, task.remind_at as string, nextDueDate);
     }
-    
+
     query = `UPDATE tasks SET status = 'pending', due_date = ?, remind_at = ?, reminded = 0, updated_at = CURRENT_TIMESTAMP, completed_at = NULL WHERE id = ?`;
     params = [nextDueDate, nextRemindAt, id];
   } else {
@@ -257,12 +263,12 @@ app.delete('/:id', async (c) => {
 app.put('/:id', async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
-  
+
   const existingTask = await c.env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first();
   if (!existingTask) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
 
-  if ((body.due_date !== undefined && !isValidDate(body.due_date)) || 
-      (body.remind_at !== undefined && !isValidDate(body.remind_at))) {
+  if ((body.due_date !== undefined && !isValidDate(body.due_date)) ||
+    (body.remind_at !== undefined && !isValidDate(body.remind_at))) {
     return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'due_date and remind_at must be valid ISO or YYYY-MM-DD strings' }), 400);
   }
 
@@ -271,7 +277,7 @@ app.put('/:id', async (c) => {
   const params: any[] = [];
 
   const updateFields = ['title', 'description', 'status', 'priority', 'category_id', 'source', 'recurring_rule', 'due_date', 'remind_at'];
-  
+
   for (const field of updateFields) {
     if (body[field] !== undefined) {
       let value = body[field];
@@ -310,7 +316,7 @@ app.put('/:id', async (c) => {
     if (body.tags && Array.isArray(body.tags)) {
       await c.env.DB.prepare('DELETE FROM task_tags WHERE task_id = ?').bind(id).run();
       const nameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5]+$/;
-      
+
       for (const tagIdentifier of body.tags) {
         const tagName = String(tagIdentifier).trim();
         if (!nameRegex.test(tagName)) continue;
@@ -326,7 +332,7 @@ app.put('/:id', async (c) => {
         if (tagId) {
           try {
             await c.env.DB.prepare('INSERT INTO task_tags (task_id, tag_id) VALUES (?, ?)').bind(id, tagId).run();
-          } catch(e) { }
+          } catch (e) { }
         }
       }
     }
