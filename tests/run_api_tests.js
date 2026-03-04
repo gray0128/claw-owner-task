@@ -16,11 +16,11 @@ async function apiFetch(path, options = {}) {
     ...options,
     headers: { ...headers, ...options.headers }
   });
-  
+
   if (res.status === 204) {
     return { status: res.status };
   }
-  
+
   const text = await res.text();
   let body;
   try {
@@ -61,10 +61,10 @@ test('【基础功能】F-01, F-02, AI-03, AI-02: 创建带标签和元数据的
     method: 'POST',
     body: JSON.stringify(payload)
   });
-  
+
   assert.strictEqual(status, 201, '应该成功创建任务并返回 201');
   assert.ok(body.data.id, '应该返回生成的任务 ID');
-  
+
   // 保存生成的任务 ID 以供后续测试使用
   process.env.TEST_TASK_ID = body.data.id;
 });
@@ -79,7 +79,7 @@ test('【异常测试】T-02: 非法时间格式校验', async () => {
     method: 'POST',
     body: JSON.stringify(payload)
   });
-  
+
   assert.strictEqual(status, 400, '非法时间格式应返回 400 错误');
 });
 
@@ -92,7 +92,7 @@ test('【异常测试】F-08: 标签格式校验测试 (包含特殊字符)', as
     method: 'POST',
     body: JSON.stringify(payload)
   });
-  
+
   assert.strictEqual(status, 400, '包含特殊字符的标签名应被拒绝，返回 400 错误');
 });
 
@@ -136,7 +136,7 @@ test('【基础功能】F-06: 修改任务 (全字段及元数据)', async () =>
     method: 'PUT',
     body: JSON.stringify({ priority: 'low' })
   });
-  
+
   const { body: partialCheck } = await apiFetch(`/tasks/${taskId}`);
   assert.strictEqual(partialCheck.data.priority, 'low');
   assert.strictEqual(partialCheck.data.title, payload.title, '标题不应改变');
@@ -147,7 +147,7 @@ test('【基础功能】F-06: 修改任务 (全字段及元数据)', async () =>
     method: 'PUT',
     body: JSON.stringify({ remind_at: null })
   });
-  
+
   const { body: clearCheck } = await apiFetch(`/tasks/${taskId}`);
   assert.strictEqual(clearCheck.data.remind_at, null, '提醒时间应成功清除');
 });
@@ -168,7 +168,7 @@ test('【基础功能】F-06-Remind: 单独更新提醒时间', async () => {
   // 2. 验证更新结果
   const { body: checkBody } = await apiFetch(`/tasks/${taskId}`);
   assert.strictEqual(checkBody.data.remind_at, newRemindAt, '提醒时间应更新为指定值');
-  
+
   // 3. 验证其他字段未受影响 (对比 F-06 最后的标题)
   assert.strictEqual(checkBody.data.title, '深度修改后的任务', '标题不应因更新提醒时间而改变');
 
@@ -178,7 +178,7 @@ test('【基础功能】F-06-Remind: 单独更新提醒时间', async () => {
     method: 'PUT',
     body: JSON.stringify({ remind_at: anotherRemindAt })
   });
-  
+
   const { body: finalCheck } = await apiFetch(`/tasks/${taskId}`);
   assert.strictEqual(finalCheck.data.remind_at, anotherRemindAt, '提醒时间应能多次修改');
 });
@@ -199,7 +199,7 @@ test('【基础功能】F-06-DueDate: 单独更新截止日期', async () => {
   // 2. 验证更新结果
   const { body: checkBody } = await apiFetch(`/tasks/${taskId}`);
   assert.strictEqual(checkBody.data.due_date, newDueDate, '截止日期应更新为指定值');
-  
+
   // 3. 验证其他关键字段未受影响
   assert.strictEqual(checkBody.data.title, '深度修改后的任务', '标题不应因更新截止日期而改变');
   // 此时 remind_at 应该是 F-06-Remind 最后设置的值
@@ -211,7 +211,7 @@ test('【基础功能】F-06-DueDate: 单独更新截止日期', async () => {
     method: 'PUT',
     body: JSON.stringify({ due_date: anotherDueDate })
   });
-  
+
   const { body: finalCheck } = await apiFetch(`/tasks/${taskId}`);
   assert.strictEqual(finalCheck.data.due_date, anotherDueDate, '截止日期应能多次修改');
 });
@@ -225,7 +225,7 @@ test('【基础功能】F-06-CLI-Format: 使用 CLI 风格的时间格式 (YYYY-
 
   const { status } = await apiFetch(`/tasks/${taskId}`, {
     method: 'PUT',
-    body: JSON.stringify({ 
+    body: JSON.stringify({
       due_date: cliDueDate,
       remind_at: cliRemindAt
     })
@@ -244,20 +244,20 @@ test('【基础功能】F-03: 更新任务状态至 completed 及其完成时间
   let res = await apiFetch(`/tasks/${taskId}/complete`, {
     method: 'PUT'
   });
-  
+
   assert.strictEqual(res.status, 200, '应该成功标记任务为完成');
 
   // 验证 completed_at 是否被正确记录
   let checkRes = await apiFetch(`/tasks/${taskId}`);
   assert.ok(checkRes.body.data.completed_at, '完成时应当记录 completed_at 时间');
-  
+
   // 测试状态重置为 pending 时 completed_at 应该清空
   let pendingRes = await apiFetch(`/tasks/${taskId}`, {
     method: 'PUT',
     body: JSON.stringify({ status: 'pending' })
   });
   assert.strictEqual(pendingRes.status, 200, '应该成功恢复任务为 pending');
-  
+
   let checkPendingRes = await apiFetch(`/tasks/${taskId}`);
   assert.strictEqual(checkPendingRes.body.data.completed_at, null, '状态变更为 pending 时应清空 completed_at');
 
@@ -271,10 +271,10 @@ test('【基础功能】F-07: 任务列表多维度筛选', async () => {
   // F-06 修改后：priority=low, tags=[标签A, 标签B]
   // F-03 修改后：status=completed
   const { status, body } = await apiFetch('/tasks?status=completed&priority=low&tag_name=标签A');
-  
+
   assert.strictEqual(status, 200);
   assert.ok(Array.isArray(body.data), '应该返回任务数组');
-  
+
   const foundTask = body.data.find(t => t.id === parseInt(process.env.TEST_TASK_ID));
   assert.ok(foundTask, '通过多维度筛选应能找到之前深度修改的任务');
 });
@@ -283,7 +283,7 @@ test('【基础功能】F-07: 按截止日期筛选', async () => {
   // F-06-CLI-Format 最后设置：due_date=2026-03-09 10:00:00
   const dueDate = '2026-03-09';
   const { status, body } = await apiFetch(`/tasks?due_date=${dueDate}`);
-  
+
   assert.strictEqual(status, 200);
   assert.ok(body.data.some(t => t.id === parseInt(process.env.TEST_TASK_ID)), '应该能根据截止日期筛选到任务');
 });
@@ -302,7 +302,7 @@ test('【周期逻辑】REC-01: 完成每日任务 (daily) 并验证下次时间
     method: 'POST',
     body: JSON.stringify(payload)
   });
-  
+
   assert.strictEqual(status, 201);
   const taskId = body.data.id;
 
@@ -315,14 +315,14 @@ test('【周期逻辑】REC-01: 完成每日任务 (daily) 并验证下次时间
   // 3. 验证下次时间 (应推迟 24 小时)
   const { body: checkBody } = await apiFetch(`/tasks/${taskId}`);
   const task = checkBody.data;
-  
+
   assert.strictEqual(task.status, 'pending', '周期任务完成后状态应重置为 pending');
   // SQLite 返回格式可能略有不同，后端可能返回 YYYY-MM-DD HH:mm:ss 或 ISO
   // 检查是否推迟了一天
   const nextDueDate = new Date(task.due_date.includes('Z') ? task.due_date : task.due_date + 'Z');
   const expectedDueDate = new Date('2026-03-06T08:00:00.000Z');
   assert.strictEqual(nextDueDate.toISOString(), expectedDueDate.toISOString(), '截止时间应推迟 24 小时');
-  
+
   const nextRemindAt = new Date(task.remind_at.includes('Z') ? task.remind_at : task.remind_at + 'Z');
   const expectedRemindAt = new Date('2026-03-06T07:30:00.000Z');
   assert.strictEqual(nextRemindAt.toISOString(), expectedRemindAt.toISOString(), '提醒时间应同步推迟 24 小时');
@@ -335,9 +335,9 @@ test('【基础功能】F-04: 删除任务测试', async () => {
   const { status } = await apiFetch(`/tasks/${taskId}`, {
     method: 'DELETE'
   });
-  
+
   assert.strictEqual(status, 200, '应该成功删除任务');
-  
+
   // 删除后的任务不应该出现在列表中
   const checkRes = await apiFetch(`/tasks?q=修改后的自动化测试任务`);
   const foundTask = checkRes.body.data.find(t => t.id === parseInt(taskId));
@@ -358,4 +358,51 @@ test('【提醒机制】R-02: 模拟 Agent 提醒检查', async () => {
   });
   assert.strictEqual(status, 200, 'Agent 提醒检查应正常返回 200');
   assert.ok(Array.isArray(body.data.tasks), 'Agent 频道应该返回任务数组');
+});
+
+// ==================== Bark 日志查询测试 ====================
+
+test('【日志查询】L-01: 查询 Bark 推送日志 (默认参数)', async () => {
+  const { status, body } = await apiFetch('/logs/bark');
+  assert.strictEqual(status, 200, '日志查询应返回 200');
+  assert.ok(body.success, '响应的 success 字段应为 true');
+  assert.ok(Array.isArray(body.data), '应返回日志数组');
+  // 验证返回字段结构 (如果有数据)
+  if (body.data.length > 0) {
+    const log = body.data[0];
+    assert.ok('id' in log, '日志应包含 id 字段');
+    assert.ok('pushed_at' in log, '日志应包含 pushed_at 字段');
+    assert.ok('payload' in log, '日志应包含 payload 字段');
+    assert.ok('task_id' in log, '日志应包含 task_id 字段');
+  }
+});
+
+test('【日志查询】L-02: 使用 limit 参数限制返回条数', async () => {
+  const { status, body } = await apiFetch('/logs/bark?limit=5');
+  assert.strictEqual(status, 200);
+  assert.ok(Array.isArray(body.data));
+  assert.ok(body.data.length <= 5, '返回条数不应超过指定的 limit');
+});
+
+test('【日志查询】L-03: 按 task_id 过滤日志', async () => {
+  // 使用一个不存在的 task_id，应返回空数组
+  const { status, body } = await apiFetch('/logs/bark?task_id=999999');
+  assert.strictEqual(status, 200);
+  assert.ok(Array.isArray(body.data));
+  assert.strictEqual(body.data.length, 0, '不存在的 task_id 应返回空数组');
+});
+
+test('【日志查询】L-04: limit 下限边界值校验 (limit=0 应被校正)', async () => {
+  const { status, body } = await apiFetch('/logs/bark?limit=0');
+  assert.strictEqual(status, 200, 'limit=0 不应导致错误');
+  assert.ok(body.success, '应正常返回成功响应');
+  assert.ok(Array.isArray(body.data), '应返回日志数组');
+});
+
+test('【日志查询】L-05: limit 上限边界值校验 (limit=200 应被截断为 100)', async () => {
+  const { status, body } = await apiFetch('/logs/bark?limit=200');
+  assert.strictEqual(status, 200, 'limit=200 不应导致错误');
+  assert.ok(body.success, '应正常返回成功响应');
+  assert.ok(Array.isArray(body.data), '应返回日志数组');
+  assert.ok(body.data.length <= 100, '返回条数不应超过上限 100');
 });

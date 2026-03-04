@@ -27,18 +27,34 @@ app.post('/check', async (c) => {
   }
 
   if (channel === 'cloud') {
-    // Cloud trigger -> send to Bark and mark as reminded
+    // Cloud trigger -> send to Bark and mark as reminded, then log it
     for (const task of results) {
-      const success = await sendBarkNotification(
-        c.env.BARK_URL || '', 
-        `任务提醒: ${task.title}`, 
+      const { success, payload } = await sendBarkNotification(
+        c.env.BARK_URL || '',
+        `任务提醒: ${task.title}`,
         (task.description as string) || '到期了，快去看看吧！'
       );
       if (success) {
+        // Mark as reminded
         await c.env.DB.prepare('UPDATE tasks SET reminded = 1 WHERE id = ?').bind(task.id).run();
+
+        // Insert into bark_logs
+        if (payload) {
+          await c.env.DB.prepare('INSERT INTO bark_logs (task_id, payload) VALUES (?, ?)')
+            .bind(task.id, payload)
+            .run();
+        }
       }
     }
-    return c.json(response(true, { tasks: results, message: 'Cloud push executed' }));
+
+    // Auto-cleanup bark_logs older than 7 days
+    try {
+      await c.env.DB.prepare("DELETE FROM bark_logs WHERE pushed_at < datetime('now', '-7 days')").run();
+    } catch (e) {
+      console.error('Failed to auto-cleanup bark_logs:', e);
+    }
+
+    return c.json(response(true, { tasks: results, message: 'Cloud push executed and cleaned up logs' }));
   } else {
     // Agent trigger -> just return the tasks, agent handles the notification
     // The Agent should ideally call another endpoint to mark them as reminded, 

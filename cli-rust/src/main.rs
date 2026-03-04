@@ -145,6 +145,16 @@ enum Commands {
         channel: String,
     },
 
+    /// Query recent Bark push logs (recent 7 days)
+    Logs {
+        /// Number of logs to fetch (1-100), default: 50
+        #[arg(short = 'n', long)]
+        limit: Option<String>,
+        /// Filter logs by a specific task ID
+        #[arg(short, long = "task-id")]
+        task_id: Option<String>,
+    },
+
     /// List all tags
     Tags,
 
@@ -264,6 +274,18 @@ struct TagRow {
     id: String,
     #[tabled(rename = "Name")]
     name: String,
+}
+
+#[derive(Tabled)]
+struct LogRow {
+    #[tabled(rename = "ID")]
+    id: String,
+    #[tabled(rename = "TaskID")]
+    task_id: String,
+    #[tabled(rename = "PushedAt")]
+    pushed_at: String,
+    #[tabled(rename = "Payload")]
+    payload: String,
 }
 
 #[derive(Tabled)]
@@ -581,6 +603,29 @@ fn main() {
                 }
             } else {
                 println!("No tasks to remind at this time.");
+            }
+        }
+
+        // --- Logs ---
+        Commands::Logs { limit, task_id } => {
+            let data = client.bark_logs(limit.as_deref(), task_id.as_deref());
+            if !format_output(json_mode, &data) {
+                if let Some(arr) = data.as_array() {
+                    if arr.is_empty() {
+                        println!("No recent Bark push logs found.");
+                    } else {
+                        let rows: Vec<LogRow> = arr
+                            .iter()
+                            .map(|l| LogRow {
+                                id: val_str(l, "id"),
+                                task_id: val_str(l, "task_id"),
+                                pushed_at: val_str(l, "pushed_at"),
+                                payload: val_str(l, "payload"),
+                            })
+                            .collect();
+                        println!("{}", Table::new(rows));
+                    }
+                }
             }
         }
 

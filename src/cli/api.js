@@ -70,5 +70,14 @@ export const api = {
   },
   remind: {
     check: (channel) => request(`/remind/check?channel=${channel}`, { method: 'POST' })
+  },
+  logs: {
+    bark: (limit, taskId) => {
+      const params = new URLSearchParams();
+      if (limit) params.append('limit', limit);
+      if (taskId) params.append('task_id', taskId);
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      return request(`/logs/bark${qs}`);
+    }
   }
 };

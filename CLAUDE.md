@@ -21,13 +21,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 项目已完成全链路开发（后端 API、CLI、Web 界面），并通过了自动化测试验证。
 - **AI 友好设计**: 支持自发现接口 (`info`)、全局 `--json` 输出、任务 `metadata` 溯源。
-- **健壮性**: 实现了 API 层的 ISO 日期格式严格校验，并配备了 100% 通过率的自动化测试套件。
-- **提醒机制**: 已实现云端 (Bark) 与本地 (Agent) 双路径提醒触发逻辑。
+- **健壮性**: 实现了 API 层的 ISO 日期格式严格校验，并配备了广泛的自动化测试套件。
+- **提醒机制**: 已实现云端 (Bark) 与本地 (Agent) 双路径提醒触发逻辑，并配备了日志审计与滚动清理系统。
 
 ## 开发与测试命令
 
 - **开发服务器**: `npm run dev` (wrangler dev)
-- **运行 API 测试**: `npm test` (运行 `tests/run_api_tests.js`)
+- **运行 API 测试**: `TASK_API_KEY=your_test_api_key_here npm test` (运行 `tests/run_api_tests.js` 时需指定测试 Key 避免 Shell 环境变量覆盖)
 - **运行 Rust 测试**: `cd cli-rust && cargo test`
 - **数据库迁移**: `npm run db:migrate:local`
 - **CLI (Node.js)**: `node src/cli/index.js [command]` 或 `claw-task [command]` (若已 link)
@@ -49,5 +49,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 ---
-**版本**: 1.5.1
-**更新时间**: 2026-03-03 13:22:00
+**版本**: 1.7.0
+**更新时间**: 2026-03-04 22:38:00

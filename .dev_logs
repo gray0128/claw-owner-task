@@ -1,0 +1,31 @@
+
+> claw-owner-task@1.5.3 dev
+> wrangler dev
+
+
+ ⛅️ wrangler 4.69.0 (update available 4.70.0)
+─────────────────────────────────────────────
+Using vars defined in .dev.vars
+Your Worker has access to the following bindings:
+Binding                                     Resource                  Mode
+env.DB (claw-owner-task-db)                 D1 Database               local
+env.USER_TIMEZONE ("(hidden)")              Environment Variable      local
+env.TASK_API_KEY ("(hidden)")               Environment Variable      local
+env.BARK_URL ("(hidden)")                   Environment Variable      local
+
+⎔ Starting local server...
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mScheduled Workers are not automatically triggered during local development.[0m
+
+  To manually trigger a scheduled event, run:
+    curl "http://localhost:8787/cdn-cgi/handler/scheduled"
+  For more details, see [4mhttps://developers.cloudflare.com/workers/configuration/cron-triggers/#test-cron-triggers-locally[0m
+
+
+[wrangler:info] Ready on http://localhost:8787
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mBark notification failed with status: 400[0m
+
+
+[wrangler:info] POST /api/remind/check 200 OK (941ms)
+[wrangler:info] GET /api/logs/bark 200 OK (5ms)
+[wrangler:info] GET /api/logs/bark 200 OK (5ms)
+[wrangler:info] GET /api/logs/bark 200 OK (4ms)

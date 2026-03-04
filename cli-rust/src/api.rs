@@ -153,4 +153,23 @@ impl ApiClient {
         }
         self.request("POST", "/categories", Some(payload))
     }
+
+    // --- Logs ---
+    pub fn bark_logs(&self, limit: Option<&str>, task_id: Option<&str>) -> Value {
+        let mut params = vec![];
+        if let Some(l) = limit {
+            params.push(format!("limit={}", l));
+        }
+        if let Some(tid) = task_id {
+            params.push(format!("task_id={}", tid));
+        }
+        
+        let qs = if params.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", params.join("&"))
+        };
+        
+        self.request("GET", &format!("/logs/bark{}", qs), None)
+    }
 }

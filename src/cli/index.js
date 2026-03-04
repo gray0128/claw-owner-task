@@ -69,7 +69,7 @@ program
     if (options.remind) params.append('remind_at', options.remind);
     if (options.tag) params.append('tag_name', options.tag);
     const qs = params.toString() ? `?${params.toString()}` : '';
-    
+
     const tasks = await api.tasks.list(qs);
     if (!formatOutput(tasks)) {
       console.table(tasks.map(t => ({
@@ -210,7 +210,7 @@ program
       console.log(JSON.stringify(res, null, 2));
       return;
     }
-    
+
     // Agent channel defaults to JSON string output based on original implementation
     if (res.tasks && res.tasks.length > 0) {
       console.log(`Triggered ${res.tasks.length} reminders.`);
@@ -219,6 +219,32 @@ program
       }
     } else {
       console.log('No tasks to remind at this time.');
+    }
+  });
+
+// --- Logs ---
+program
+  .command('logs')
+  .description('Query recent Bark push logs (recent 7 days)')
+  .option('-n, --limit <number>', 'Number of logs to fetch (1-100), default: 50')
+  .option('-t, --task-id <id>', 'Filter logs by a specific task ID')
+  .action(async (options) => {
+    try {
+      const logs = await api.logs.bark(options.limit, options.taskId);
+      if (!formatOutput(logs)) {
+        if (logs.length === 0) {
+          console.log('No recent Bark push logs found.');
+        } else {
+          console.table(logs.map(l => ({
+            ID: l.id,
+            TaskID: l.task_id || '-',
+            PushedAt: l.pushed_at,
+            Payload: l.payload
+          })));
+        }
+      }
+    } catch (error) {
+      exitWithError(error.message);
     }
   });
 
