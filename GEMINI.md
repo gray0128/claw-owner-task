@@ -58,9 +58,10 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 
 ---
-**版本**: 1.6.2
-**更新时间**: 2026-03-05 01:50:00
+**版本**: 1.6.3
+**更新时间**: 2026-03-05 02:00:00
 **变更历史**:
+- 2026-03-05: 发布 1.6.3，优化 CLI 交互：AI 解析提示语更新为英文并增加动态动画；延长 Rust CLI 超时时间至 60s 以适配长耗时 AI 解析；更新 README 明确 `sudo` 升级指令及别名限制。
 - 2026-03-05: 发布 1.6.2，修复 GLM-4 返回内容中的循环引用 Bug（500 错误）；优化 CLI 交互，新增 AI 解析中状态提示。
 - 2026-03-05: 更新至 1.6.1，优化 AI 语义解析 System Prompt，增加显式的 JSON 响应示例以提升 GLM-4 模型输出的稳定性。
 - 2026-03-05: 发布 1.6.0，正式引入 AI 语义任务处理系统。后端集成 GLM-4.7-Flash 模型，支持自然语言解析、业务逻辑闭环流转、安全 white-list 拦截及审计溯源。

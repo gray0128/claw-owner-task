@@ -203,11 +203,20 @@ program
   .command('ai <text>')
   .description('AI-powered task management using natural language')
   .action(async (text) => {
+    let spinner;
     try {
       if (!program.opts().json) {
-        process.stdout.write('AI 正在处理中...\n');
+        let dots = 0;
+        spinner = setInterval(() => {
+          process.stdout.write(`\rAI is processing${'.'.repeat(dots % 4)}${' '.repeat(3 - (dots % 4))}`);
+          dots++;
+        }, 500);
       }
       const res = await api.tasks.ai(text);
+      if (spinner) {
+        clearInterval(spinner);
+        process.stdout.write('\r' + ' '.repeat(30) + '\r'); // Clear the line
+      }
       if (formatOutput(res)) return;
 
       const { action, fields } = res.ai_parsed || {};

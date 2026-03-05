@@ -2,6 +2,7 @@ use reqwest::blocking::Client;
 use serde_json::Value;
 use std::env;
 use std::process;
+use std::time::Duration;
 
 /// Check if --json flag is present in args (for error handler before clap parses).
 fn is_json_mode() -> bool {
@@ -43,7 +44,10 @@ impl ApiClient {
         Self {
             base_url,
             api_key,
-            client: Client::new(),
+            client: Client::builder()
+                .timeout(Duration::from_secs(60))
+                .build()
+                .unwrap_or_else(|_| Client::new()),
         }
     }
 
