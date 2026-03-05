@@ -1,12 +1,12 @@
 [package]
 name = "claw-task"
-version = "1.5.5"
+version = "1.5.6"
 edition = "2024"
 description = "Claw Owner Task CLI - A minimalist task manager for humans and AI."
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-reqwest = { version = "0.12", features = ["blocking", "json"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = "0.4"
