@@ -1,16 +1,23 @@
 # GEMINI.md
 
-## 项目概述
-**AI优先的任务管理系统 (claw-owner-task)** 是一个专为个人用户和 **AI Agent (OpenCLaw)** 设计的任务管理系统。支持跨平台部署，提供云端自触发提醒（Bark）与 Agent 本地提醒的双重能力。
+This file provides guidance to AI Agents (including Claude and Gemini) when working with code in this repository.
 
-### 核心组件
-- **后端 (API)**: Cloudflare Workers + TypeScript。提供自发现接口、Bark 推送（含审计日志记录与过期清理）、元数据处理、强制鉴权及**严格的时间格式校验**。
+## 项目概述
+**AI优先的任务管理系统 (claw-owner-task)** 是一个专为个人用户 and **AI Agent (OpenCLaw)** 设计的任务管理系统。支持跨平台部署，提供云端自触发提醒（Bark）与 Agent 本地提醒的双重能力。
+
+## 技术栈与核心组件
+- **后端 (API)**: Cloudflare Workers + TypeScript。提供自发现接口、Bark 推送（含审计日志记录与过期清理）、元数据处理、强制鉴权及严格的时间格式校验。
 - **数据库**: Cloudflare D1 (SQLite)。存储 UTC 时间、AI 上下文及关联标签。
-- **跨平台 CLI (`claw-task`)**: 提供 Node.js 版 (`src/cli/`) 和 Rust 高性能版 (`cli-rust/`) 两种实现，功能完全一致。
-- **前端 (Web)**: 原生 HTML/CSS/JS (No-build)，极简且功能完备。
+- **跨平台 CLI (`claw-task`)**: 提供 Node.js 版 (`src/cli/`) 和 Rust 高性能版 (`cli-rust/`) 两种实现，功能完全一致。支持多平台构建（含 Linux Musl）。
+- **前端 (Web)**: 原生 HTML/CSS/JS (No-build)，利用浏览器原生 ES Modules，极简且功能完备。
+
+## 当前状态
+项目已完成全链路开发，并通过了完整的自动化测试验证。
+- **AI 友好设计**: 支持自发现接口 (`info`)、全局 `--json` 输出、任务 `metadata` 溯源。
+- **健壮性**: 实现了 API 层的 ISO 日期格式严格校验，并配备了广泛的自动化测试套件。
+- **提醒机制**: 已实现云端 (Bark) 与本地 (Agent) 双路径提醒触发逻辑，并配备了日志审计与滚动清理系统。
 
 ## 核心原则 (AI 交互准则)
-
 ### 1. AI 友好性与自发现
 - 始终通过 `/api/info` 获取系统状态、分类、标签及配置信息，避免参数幻觉。
 - 利用 `metadata` (JSON) 字段存储任务生成的原始对话上下文，实现背景溯源。
@@ -20,18 +27,20 @@
 - **强制鉴权**: 所有非静态请求必须携带 Bearer Token (`TASK_API_KEY`)。
 - **敏感信息保护**: 配置文件（如 `wrangler.toml`、`.dev.vars`）中严禁出现生产环境的敏感信息（如真实的 `database_id`、`TASK_API_KEY`、`BARK_URL` 等）。每次提交代码前必须检查，确保不会将敏感数据泄露到版本控制中。
 - **时区一致性**: 后端存储 UTC，根据 `USER_TIMEZONE` 动态转换 I/O 时间。
-- **数据完整性**: API 层对 `due_date` 和 `remind_at` 执行严格的 ISO/YYYY-MM-DD 格式校验。
+- **数据完整性**: API 层对 `due_date` 和 `remind_at` 执行严格特 ISO/YYYY-MM-DD 格式校验。
 
 ### 3. 质量保障与自动化
 - 项目内置完整的自动化 API 测试套件 (`npm test`)，覆盖 CRUD、异常边界、自发现及提醒触发逻辑。
 - **本地测试注意**: 为防止本地 Shell 环境变量覆盖 `.dev.vars`，本地执行测试时需显式指定测试 Key：`TASK_API_KEY=your_test_api_key_here npm test`。
 
-## 开发路线图 (Roadmap)
-
-- [x] **Phase 1 (Foundation)**: 完成 Cloudflare Workers 与 D1 数据库的基础架构搭建及核心 API。
-- [x] **Phase 2 (CLI)**: 实现跨平台 Node.js 命令行工具，支持 CRUD 及提醒检查。提供 Rust 版高性能二进制实现。
-- [x] **Phase 3 (Web)**: 实现无构建步骤的 Web 管理界面。
-- [x] **Phase 4 (Integration)**: 完成 OpenCLaw 集成、自动化测试验证与全链路交付。
+## 开发与测试命令
+- **开发服务器**: `npm run dev` (wrangler dev)
+- **运行 API 测试**: `TASK_API_KEY=your_test_api_key_here npm test` (运行 `tests/run_api_tests.js` 时需指定测试 Key 避免 Shell 环境变量覆盖)
+- **运行 Rust 测试**: `cd cli-rust && cargo test`
+- **数据库迁移**: `npm run db:migrate:local`
+- **CLI (Node.js)**: `node src/cli/index.js [command]` 或 `claw-task [command]`
+- **CLI (Rust)**: `cd cli-rust && cargo run -- [command]`
+- **编译 Rust 版**: `cd cli-rust && cargo build --release`
 
 ## 目录结构
 - `src/worker/`: 后端中间件、服务逻辑、数据库迁移。
@@ -41,20 +50,28 @@
 - `docs/`: 包含 `需求说明.md`, `技术架构.md`, `开发计划.md`, `缺陷修复记录.md`。
 - `tests/`: 包含测试计划、Mock 脚本及自动化 API 测试脚本 (`run_api_tests.js`)。
 
+## 缺陷修复与已知问题
+本项目维护了详细的缺陷修复记录，包含环境配置、时间解析等常见问题的解决方案：
+- [缺陷修复记录](docs/缺陷修复记录.md)
+
+## 参考资料
+- [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
+
 ---
 **版本**: 1.7.1
-**更新时间**: 2026-03-05 00:50:00
+**更新时间**: 2026-03-05 01:10:00
 **变更历史**:
+- 2026-03-05: 整合 GEMINI.md 与 CLAUDE.md 文档内容，统一项目认知。
 - 2026-03-05: 发布 CLI 专属版本 1.5.5，为 GitHub Actions 构建脚本引入 `cross` 工具，增加 `aarch64-unknown-linux-musl` 和 `x86_64-unknown-linux-musl` 的完整静态链接构建支持。
-- 2026-03-05: 更新至 1.7.1，新增敏感信息保护规则：配置文件严禁出现生产环境密钥和 ID，提交前必须检查。
-- 2026-03-04: 更新至 1.7.0，实现 Bark 推送日志审计系统，支持由全局 CLI 进行记录查询与滚动删除（保留最近 7 天）。
-- 2026-03-03: 更新至 1.6.0，新增任务完成时间 (`completed_at`) 字段。更新数据库 schema，优化前端页面以显式展示完成时间；优化后端辅助函数层级。
-- 2026-03-03: 更新至 1.5.2，修复 CLI 更新任务时报错：非法的 ISO 时间格式问题。增强后端校验正则以支持空格 分隔符和可选时区；**后端实现强制 UTC 标准化**，确保入库数据格式统一。
-- 2026-03-03: 更新至 1.5.1，新增 `GET /api/tasks/:id` 接口；修复 ISO 日期解析 Bug；新增 `docs/缺陷修复记录.md` 记录关键缺陷修复。
-- 2026-03-02: 更新至 1.5.0，移除 Bun 打包方案及 GitHub Actions 工作流，改用 Rust 实现高性能 CLI 二进制。
-- 2026-03-02: 更新至 1.3.7，引入自动化 API 测试套件 (`npm test`)；增加 API 层的严格时间格式校验；同步项目路线图至 100% 完成状态。
-- 2026-03-01: 更新至 1.3.3，优化 AI 友好度：解除 `--help` 环境变量依赖、全局新增 `--json` 参数、新增 `delete` 命令容错、兼容 ISO 时间格式解析。
-- 2026-03-01: 更新至 1.3.2，全局命令更名为 `claw-task`；支持按名称打标签、多分隔符及正则校验。
-- 2026-03-01: 更新至 1.3.1，引入详细开发计划清单并同步项目进度。
+- 2026-03-05: 更新至 1.7.1，新增敏感信息保护规则。
+- 2026-03-04: 更新至 1.7.0，实现 Bark 推送日志审计系统。
+- 2026-03-03: 更新至 1.6.0，新增任务完成时间 (`completed_at`) 字段。
+- 2026-03-03: 更新至 1.5.2，修复 CLI 更新任务时报错：非法的 ISO 时间格式问题。
+- 2026-03-03: 更新至 1.5.1，新增 `GET /api/tasks/:id` 接口。
+- 2026-03-02: 更新至 1.5.0，移除 Bun 打包方案，改用 Rust 实现高性能 CLI 二进制。
+- 2026-03-02: 更新至 1.3.7，引入自动化 API 测试套件。
+- 2026-03-01: 更新至 1.3.3，优化 AI 友好度。
+- 2026-03-01: 更新至 1.3.2，全局命令更名为 `claw-task`。
+- 2026-03-01: 更新至 1.3.1，引入详细开发计划清单。
 - 2026-03-01: 更新至 1.3.0，支持跨平台解耦提醒路径。
 ---
