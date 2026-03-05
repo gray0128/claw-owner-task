@@ -688,6 +688,9 @@ fn main() {
 
         // --- AI ---
         Commands::Ai { text } => {
+            if !json_mode {
+                println!("AI 正在处理中...");
+            }
             let res = client.ai_task(&text);
             if format_output(json_mode, &res) {
                 return;

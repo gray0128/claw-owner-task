@@ -204,6 +204,9 @@ program
   .description('AI-powered task management using natural language')
   .action(async (text) => {
     try {
+      if (!program.opts().json) {
+        process.stdout.write('AI 正在处理中...\n');
+      }
       const res = await api.tasks.ai(text);
       if (formatOutput(res)) return;
 

@@ -66,8 +66,10 @@ Response Format Example:
   }
 }
 
-If the intent is not clear or not covered, return {"action": "none", "fields": {}}.
-For dates/times, resolve relative terms based on the Current Date/Time.
+Important Instructions:
+1. If the user provides a short phrase that sounds like a task or a test (e.g., "测试 AI 功能"), prefer "create" with that phrase as the title.
+2. Only return action "none" if the input is completely nonsensical or malicious.
+3. For dates/times, resolve relative terms based on the Current Date/Time.
 `;
 
   try {
@@ -78,18 +80,15 @@ For dates/times, resolve relative terms based on the Current Date/Time.
       ]
     });
 
-    // Handle different response structures from Workers AI
+    // Handle different response structures
     let rawContent = '';
     if (typeof aiResponse === 'string') {
         rawContent = aiResponse;
     } else if (aiResponse.choices && aiResponse.choices[0] && aiResponse.choices[0].message) {
-        // Chat Completion format (GLM-4, Llama 3 on some gateways)
         rawContent = aiResponse.choices[0].message.content;
     } else if (aiResponse.response) {
-        // Standard Workers AI format
         rawContent = aiResponse.response;
     } else if (aiResponse.result && aiResponse.result.response) {
-        // Result wrapper format
         rawContent = aiResponse.result.response;
     } else {
         rawContent = JSON.stringify(aiResponse);
@@ -115,10 +114,13 @@ For dates/times, resolve relative terms based on the Current Date/Time.
       return c.json(response(false, null, { code: 'FORBIDDEN', message: `Action '${action}' is not allowed via AI.` }), 403);
     }
 
+    // BREAK CIRCULAR REFERENCE: Deep clone the parse result before adding it to metadata
+    const rawParseSnapshot = JSON.parse(JSON.stringify(result));
+
     // Audit Metadata
     const aiContext = {
       original_prompt: text,
-      raw_parse_result: result,
+      raw_parse_result: rawParseSnapshot,
       timestamp: new Date().toISOString()
     };
 
@@ -149,7 +151,6 @@ For dates/times, resolve relative terms based on the Current Date/Time.
         for (const [key, value] of Object.entries(fields)) {
             if (value !== undefined && value !== null) {
                 if (Array.isArray(value)) {
-                    // For tags or other arrays in query
                     queryParams.append(key, value.join(','));
                 } else {
                     queryParams.append(key, String(value));
