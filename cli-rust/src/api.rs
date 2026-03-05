@@ -47,8 +47,8 @@ impl ApiClient {
         }
     }
 
-    /// Send a request and return the `data` field from `{ success, data }`.
-    fn request(&self, method: &str, endpoint: &str, body: Option<Value>) -> Value {
+    /// Send a request and return the full JSON response.
+    fn request_full(&self, method: &str, endpoint: &str, body: Option<Value>) -> Value {
         let url = format!("{}{}", self.base_url, endpoint);
         let builder = match method {
             "GET" => self.client.get(&url),
@@ -98,6 +98,12 @@ impl ApiClient {
             handle_error(&format!("API logic error: {err}"));
         }
 
+        json
+    }
+
+    /// Send a request and return the `data` field from `{ success, data }`.
+    fn request(&self, method: &str, endpoint: &str, body: Option<Value>) -> Value {
+        let json = self.request_full(method, endpoint, body);
         json.get("data").cloned().unwrap_or(Value::Null)
     }
 
@@ -125,6 +131,10 @@ impl ApiClient {
 
     pub fn delete_task(&self, id: &str) -> Value {
         self.request("DELETE", &format!("/tasks/{id}"), None)
+    }
+
+    pub fn ai_task(&self, text: &str) -> Value {
+        self.request_full("POST", "/tasks/ai", Some(serde_json::json!({ "text": text })))
     }
 
     // --- Remind ---

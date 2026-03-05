@@ -5,6 +5,7 @@ import { timezoneMiddleware } from './middleware/timezone';
 
 import { infoHandlers } from './handlers/info';
 import { taskHandlers } from './handlers/tasks';
+import { aiHandlers } from './handlers/ai';
 import { categoryHandlers } from './handlers/categories';
 import { tagHandlers } from './handlers/tags';
 import { remindHandlers } from './handlers/remind';
@@ -12,6 +13,7 @@ import { logsHandlers } from './handlers/logs';
 
 export type Bindings = {
   DB: D1Database;
+  AI: any;
   TASK_API_KEY: string;
   USER_TIMEZONE: string;
   BARK_URL?: string;
@@ -26,6 +28,7 @@ app.use('/api/*', timezoneMiddleware);
 
 // Routes
 app.route('/api/info', infoHandlers);
+app.route('/api/tasks/ai', aiHandlers);
 app.route('/api/tasks', taskHandlers);
 app.route('/api/categories', categoryHandlers);
 app.route('/api/tags', tagHandlers);

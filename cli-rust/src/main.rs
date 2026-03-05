@@ -179,6 +179,12 @@ enum Commands {
     /// Upgrade the CLI to the latest version
     Upgrade,
 
+    /// AI-powered task management using natural language
+    Ai {
+        /// Natural language text
+        text: String,
+    },
+
     #[command(hide = true)]
     InternalCheckUpdate,
 }
@@ -677,6 +683,74 @@ fn main() {
             let res = client.create_category(&name, color.as_deref());
             if !format_output(json_mode, &res) {
                 println!("Category created with ID: {}", val_str(&res, "id"));
+            }
+        }
+
+        // --- AI ---
+        Commands::Ai { text } => {
+            let res = client.ai_task(&text);
+            if format_output(json_mode, &res) {
+                return;
+            }
+
+            let action = res
+                .get("ai_parsed")
+                .and_then(|v| v.get("action"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            println!("\n[AI interpreted as: {action}]");
+
+            let data = res.get("data").unwrap_or(&Value::Null);
+            let success = res.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+
+            if action == "query" && data.is_array() {
+                if let Some(arr) = data.as_array() {
+                    if arr.is_empty() {
+                        println!("No tasks found.");
+                    } else {
+                        let rows: Vec<TaskRow> = arr
+                            .iter()
+                            .map(|t| {
+                                let tags_str = t
+                                    .get("tags")
+                                    .and_then(|v| v.as_array())
+                                    .map(|tags| {
+                                        tags.iter()
+                                            .filter_map(|tag| tag.get("name").and_then(|n| n.as_str()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ")
+                                    })
+                                    .unwrap_or_else(|| "-".to_string());
+                                let tags_display = if tags_str.is_empty() {
+                                    "-".to_string()
+                                } else {
+                                    tags_str
+                                };
+
+                                TaskRow {
+                                    id: val_str(t, "id"),
+                                    title: val_str(t, "title"),
+                                    status: val_str(t, "status"),
+                                    priority: val_str(t, "priority"),
+                                    due: val_str(t, "due_date"),
+                                    remind: val_str(t, "remind_at"),
+                                    completed: val_str(t, "completed_at"),
+                                    category: val_str(t, "category_name"),
+                                    tags: tags_display,
+                                }
+                            })
+                            .collect();
+                        println!("{}", Table::new(rows));
+                    }
+                }
+            } else if success {
+                if action == "create" {
+                    println!("Task created successfully with ID: {}", val_str(data, "id"));
+                } else if action == "update" || action == "complete" {
+                    println!("Action {action} executed successfully.");
+                } else {
+                    println!("{}", serde_json::to_string_pretty(data).unwrap());
+                }
             }
         }
     }

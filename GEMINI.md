@@ -58,9 +58,10 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 
 ---
-**版本**: 1.7.1
-**更新时间**: 2026-03-05 01:10:00
+**版本**: 1.7.2
+**更新时间**: 2026-03-05 01:20:00
 **变更历史**:
+- 2026-03-05: 更新至 1.7.2，实现 AI 语义任务处理。新增 `POST /api/tasks/ai` 解析入口，支持 Node.js 与 Rust CLI 语义操作及安全白名单拦截。
 - 2026-03-05: 发布 CLI 1.5.6，将 reqwest 切换至 `rustls-tls`，修复跨平台构建时 OpenSSL 库缺失导致的编译错误。
 - 2026-03-05: 整合 GEMINI.md 与 CLAUDE.md 文档内容，统一项目认知。
 - 2026-03-05: 发布 CLI 专属版本 1.5.5，为 GitHub Actions 构建脚本引入 `cross` 工具，增加 `aarch64-unknown-linux-musl` 和 `x86_64-unknown-linux-musl` 的完整静态链接构建支持。

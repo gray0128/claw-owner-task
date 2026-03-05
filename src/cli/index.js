@@ -199,6 +199,46 @@ program
     }
   });
 
+program
+  .command('ai <text>')
+  .description('AI-powered task management using natural language')
+  .action(async (text) => {
+    try {
+      const res = await api.tasks.ai(text);
+      if (formatOutput(res)) return;
+
+      const { action, fields } = res.ai_parsed || {};
+      console.log(`\n[AI interpreted as: ${action}]`);
+      
+      if (action === 'query' && Array.isArray(res.data)) {
+        if (res.data.length === 0) {
+          console.log('No tasks found.');
+        } else {
+          console.table(res.data.map(t => ({
+            ID: t.id,
+            Title: t.title,
+            Status: t.status,
+            Priority: t.priority,
+            Due: t.due_date || '-',
+            Remind: t.remind_at || '-',
+            Category: t.category_name || '-',
+            Tags: t.tags && t.tags.length > 0 ? t.tags.map(tag => tag.name).join(', ') : '-'
+          })));
+        }
+      } else if (res.success) {
+        if (action === 'create') {
+          console.log(`Task created successfully with ID: ${res.data.id}`);
+        } else if (action === 'update' || action === 'complete') {
+          console.log(`Action ${action} executed successfully.`);
+        } else {
+          console.log(JSON.stringify(res.data, null, 2));
+        }
+      }
+    } catch (err) {
+      exitWithError(err.message);
+    }
+  });
+
 // --- Remind ---
 program
   .command('check')

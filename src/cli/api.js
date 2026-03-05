@@ -13,7 +13,7 @@ function handleError(msg) {
   process.exit(1);
 }
 
-async function request(endpoint, options = {}) {
+async function request(endpoint, options = {}, returnFull = false) {
   const API_KEY = process.env.TASK_API_KEY;
 
   if (!API_KEY) {
@@ -41,7 +41,7 @@ async function request(endpoint, options = {}) {
       throw new Error(`API logic error: ${JSON.stringify(json.error)}`);
     }
 
-    return json.data;
+    return returnFull ? json : json.data;
   } catch (error) {
     if (error.cause && error.cause.code === 'ECONNREFUSED') {
       handleError(`[Offline] Cannot connect to API at ${API_URL}. Please check your network or server status.`);
@@ -58,7 +58,8 @@ export const api = {
     create: (data) => request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
     update: (id, data) => request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     complete: (id) => request(`/tasks/${id}/complete`, { method: 'PUT' }),
-    delete: (id) => request(`/tasks/${id}`, { method: 'DELETE' })
+    delete: (id) => request(`/tasks/${id}`, { method: 'DELETE' }),
+    ai: (text) => request('/tasks/ai', { method: 'POST', body: JSON.stringify({ text }) }, true)
   },
   tags: {
     list: () => request('/tags'),

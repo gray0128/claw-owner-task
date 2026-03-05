@@ -13,6 +13,9 @@ migrations_dir = "src/worker/db/migrations"
 [vars]
 USER_TIMEZONE = "Asia/Shanghai"
 
+[ai]
+binding = "AI"
+
 # Scheduled Tasks (Cron Triggers)
 # triggers every 5 minutes for cloud bark notifications
 [triggers]
