@@ -47,8 +47,11 @@ app.post('/', async (c) => {
     const telegramToken = c.env.TELEGRAM_BOT_TOKEN;
     const allowedChatId = c.env.TELEGRAM_CHAT_ID;
 
-    if (!telegramToken || !allowedChatId) {
-        return c.text('Telegram integration not configured', 400);
+    if (!telegramToken) {
+        return c.text('TELEGRAM_BOT_TOKEN is missing', 400);
+    }
+    if (!allowedChatId) {
+        return c.text('TELEGRAM_CHAT_ID is missing', 400);
     }
 
     let body: any;
