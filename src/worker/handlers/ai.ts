@@ -82,9 +82,14 @@ For dates/times, resolve relative terms based on the Current Date/Time.
     let rawContent = '';
     if (typeof aiResponse === 'string') {
         rawContent = aiResponse;
+    } else if (aiResponse.choices && aiResponse.choices[0] && aiResponse.choices[0].message) {
+        // Chat Completion format (GLM-4, Llama 3 on some gateways)
+        rawContent = aiResponse.choices[0].message.content;
     } else if (aiResponse.response) {
+        // Standard Workers AI format
         rawContent = aiResponse.response;
     } else if (aiResponse.result && aiResponse.result.response) {
+        // Result wrapper format
         rawContent = aiResponse.result.response;
     } else {
         rawContent = JSON.stringify(aiResponse);
