@@ -706,54 +706,63 @@ fn main() {
             let data = res.get("data").unwrap_or(&Value::Null);
             let success = res.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
 
-            if action == "query" && data.is_array() {
-                if let Some(arr) = data.as_array() {
-                    if arr.is_empty() {
-                        println!("No tasks found.");
-                    } else {
-                        let rows: Vec<TaskRow> = arr
-                            .iter()
-                            .map(|t| {
-                                let tags_str = t
-                                    .get("tags")
-                                    .and_then(|v| v.as_array())
-                                    .map(|tags| {
-                                        tags.iter()
-                                            .filter_map(|tag| tag.get("name").and_then(|n| n.as_str()))
-                                            .collect::<Vec<_>>()
-                                            .join(", ")
-                                    })
-                                    .unwrap_or_else(|| "-".to_string());
-                                let tags_display = if tags_str.is_empty() {
-                                    "-".to_string()
-                                } else {
-                                    tags_str
-                                };
+            if success && (action == "query" || action == "create" || action == "update" || action == "complete") {
+                let tasks_to_show = if data.is_array() {
+                    data.as_array().unwrap().clone()
+                } else if data.is_object() && data.get("id").is_some() {
+                    vec![data.clone()]
+                } else {
+                    Vec::new()
+                };
 
-                                TaskRow {
-                                    id: val_str(t, "id"),
-                                    title: val_str(t, "title"),
-                                    status: val_str(t, "status"),
-                                    priority: val_str(t, "priority"),
-                                    due: val_str(t, "due_date"),
-                                    remind: val_str(t, "remind_at"),
-                                    completed: val_str(t, "completed_at"),
-                                    category: val_str(t, "category_name"),
-                                    tags: tags_display,
-                                }
-                            })
-                            .collect();
-                        println!("{}", Table::new(rows));
-                    }
+                if !tasks_to_show.is_empty() {
+                    let rows: Vec<TaskRow> = tasks_to_show
+                        .iter()
+                        .map(|t| {
+                            let tags_str = t
+                                .get("tags")
+                                .and_then(|v| v.as_array())
+                                .map(|tags| {
+                                    tags.iter()
+                                        .filter_map(|tag| {
+                                            if let Some(s) = tag.as_str() {
+                                                Some(s)
+                                            } else {
+                                                tag.get("name").and_then(|n| n.as_str())
+                                            }
+                                        })
+                                        .collect::<Vec<_>>()
+                                        .join(", ")
+                                })
+                                .unwrap_or_else(|| "-".to_string());
+                            let tags_display = if tags_str.is_empty() {
+                                "-".to_string()
+                            } else {
+                                tags_str
+                            };
+
+                            TaskRow {
+                                id: val_str(t, "id"),
+                                title: val_str(t, "title"),
+                                status: val_str(t, "status"),
+                                priority: val_str(t, "priority"),
+                                due: val_str(t, "due_date"),
+                                remind: val_str(t, "remind_at"),
+                                completed: val_str(t, "completed_at"),
+                                category: val_str(t, "category_name"),
+                                tags: tags_display,
+                            }
+                        })
+                        .collect();
+                    println!("{}", Table::new(rows));
+                } else if action == "create" {
+                    println!("Task created successfully with ID: {}", val_str(data, "id"));
+                } else {
+                    let msg = data.get("message").and_then(|v| v.as_str()).unwrap_or("Action executed successfully.");
+                    println!("{msg}");
                 }
             } else if success {
-                if action == "create" {
-                    println!("Task created successfully with ID: {}", val_str(data, "id"));
-                } else if action == "update" || action == "complete" {
-                    println!("Action {action} executed successfully.");
-                } else {
-                    println!("{}", serde_json::to_string_pretty(data).unwrap());
-                }
+                println!("{}", serde_json::to_string_pretty(data).unwrap());
             }
         }
     }

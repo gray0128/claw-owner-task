@@ -349,7 +349,26 @@ app.put('/:id', async (c) => {
       }
     }
 
-    return c.json(response(true, { message: 'Task updated successfully', id }));
+    // Fetch the updated task to return
+    const updatedTaskQuery = `
+      SELECT t.*, c.name as category_name, c.color as category_color,
+      (
+        SELECT json_group_array(json_object('id', tg.id, 'name', tg.name))
+        FROM task_tags tt JOIN tags tg ON tt.tag_id = tg.id
+        WHERE tt.task_id = t.id
+      ) as tags
+      FROM tasks t
+      LEFT JOIN categories c ON t.category_id = c.id
+      WHERE t.id = ?
+    `;
+    const updatedTask = await c.env.DB.prepare(updatedTaskQuery).bind(id).first();
+    const formattedTask = {
+      ...updatedTask,
+      tags: updatedTask?.tags ? JSON.parse(updatedTask.tags as string) : [],
+      metadata: updatedTask?.metadata ? JSON.parse(updatedTask.metadata as string) : null
+    };
+
+    return c.json(response(true, formattedTask));
   } catch (err: any) {
     return c.json(response(false, null, { code: 'DB_ERROR', message: err.message }), 500);
   }
