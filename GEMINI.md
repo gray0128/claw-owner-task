@@ -56,9 +56,10 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 
 ---
-**版本**: 1.7.0
-**更新时间**: 2026-03-05 02:20:00
+**版本**: 1.7.5
+**更新时间**: 2026-03-05 01:50:00
 **变更历史**:
+- 2026-03-05: 更新至 1.7.5，完成 AI 语义解析与模糊指代功能的闭环开发并成功部署。支持 `has_remind`/`has_due` 快速筛选；实现基于未闭环任务列表的 AI 上下文自动注入（JSON 序列化 + 12万字符截断）；同步更新测试计划与全链路自动化 API 测试脚本。
 - 2026-03-05: 发布 1.7.0，重大架构优化：彻底移除 Node.js 版 CLI 及其相关依赖（commander），全面转向基于 Rust 实现的高性能二进制 CLI。精简项目结构，专注单一高效的终端工具维护。
 - 2026-03-05: 发布 1.6.4，新增 `ENABLE_AI` 后端开关（默认为开启），允许通过 Worker 配置禁用 AI 语义解析功能；更新 README，补充 Cloudflare Workers AI 每日调用限额及隐私说明。
 - 2026-03-05: 发布 1.6.3，优化 CLI 交互：AI 解析提示语更新为英文并增加动态动画；延长 Rust CLI 超时时间至 60s 以适配长耗时 AI 解析；更新 README 明确 `sudo` 升级指令及别名限制。

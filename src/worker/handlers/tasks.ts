@@ -59,6 +59,8 @@ app.get('/', async (c) => {
   const categoryId = c.req.query('category_id');
   const dueDate = c.req.query('due_date');
   const remindAt = c.req.query('remind_at');
+  const hasRemind = c.req.query('has_remind');
+  const hasDue = c.req.query('has_due');
 
   let query = `
     SELECT t.*, c.name as category_name, c.color as category_color,
@@ -104,6 +106,16 @@ app.get('/', async (c) => {
   if (remindAt) {
     query += ` AND DATE(t.remind_at) = DATE(?)`;
     params.push(remindAt);
+  }
+  if (hasRemind === 'true') {
+    query += ` AND t.remind_at IS NOT NULL`;
+  } else if (hasRemind === 'false') {
+    query += ` AND t.remind_at IS NULL`;
+  }
+  if (hasDue === 'true') {
+    query += ` AND t.due_date IS NOT NULL`;
+  } else if (hasDue === 'false') {
+    query += ` AND t.due_date IS NULL`;
   }
 
   query += ` ORDER BY t.due_date ASC NULLS LAST, t.created_at DESC`;

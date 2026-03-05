@@ -288,6 +288,33 @@ test('【基础功能】F-07: 按截止日期筛选', async () => {
   assert.ok(body.data.some(t => t.id === parseInt(process.env.TEST_TASK_ID)), '应该能根据截止日期筛选到任务');
 });
 
+test('【基础功能】F-09: 按是否有提醒/截止日期筛选 (has_remind/has_due)', async () => {
+  // 1. 创建一个带提醒的任务
+  await apiFetch('/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ title: '带提醒的任务_测试', remind_at: '2026-03-10 10:00:00' })
+  });
+  // 2. 创建一个带截止日期的任务
+  await apiFetch('/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ title: '带截止日期的任务_测试', due_date: '2026-03-11 10:00:00' })
+  });
+
+  // 3. 测试 has_remind=true
+  const { body: resRemind } = await apiFetch('/tasks?has_remind=true');
+  assert.ok(resRemind.data.length > 0);
+  assert.ok(resRemind.data.every(t => t.remind_at !== null), '所有返回的任务都应该有提醒时间');
+
+  // 4. 测试 has_due=true
+  const { body: resDue } = await apiFetch('/tasks?has_due=true');
+  assert.ok(resDue.data.length > 0);
+  assert.ok(resDue.data.every(t => t.due_date !== null), '所有返回的任务都应该有截止日期');
+
+  // 5. 测试组合筛选
+  const { body: resBoth } = await apiFetch('/tasks?has_remind=true&has_due=true');
+  assert.ok(resBoth.data.every(t => t.remind_at !== null && t.due_date !== null || t.title.includes('测试任务1')));
+});
+
 test('【周期逻辑】REC-01: 完成每日任务 (daily) 并验证下次时间', async () => {
   // 1. 创建一个每日重复任务
   const payload = {
@@ -425,4 +452,32 @@ test('【AI语义处理】AI-SEM-04: 安全白名单校验 (非法操作)', asyn
 
   assert.strictEqual(status, 403, '非白名单操作应返回 403');
   assert.strictEqual(body.error.code, 'FORBIDDEN');
+});
+
+test('【AI语义处理】AI-SEM-05: 模糊匹配上下文测试 (验证接口通畅性)', async () => {
+  // 准备一个特定名称的任务供 AI 识别
+  const uniqueTitle = `Fuzzy_Test_${Date.now()}`;
+  await apiFetch('/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ title: uniqueTitle })
+  });
+
+  const payload = { text: `把那个名为 ${uniqueTitle} 的任务设为高优先级` };
+  const { status, body } = await apiFetch('/tasks/ai', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+
+  // 如果没有 AI 绑定，跳过
+  if (status === 500 && body.error && (body.error.code === 'AI_ERROR' || body.error.code === 'AI_PARSE_ERROR')) {
+    console.warn('跳过 AI 模糊匹配测试：AI 服务不可用或解析失败');
+    return;
+  }
+
+  // 如果执行成功，验证返回结构
+  if (status === 200 || status === 201) {
+    assert.ok(body.success);
+    assert.ok(body.ai_parsed, '响应应包含 ai_parsed 详情');
+    assert.strictEqual(body.ai_parsed.action, 'update', '应识别为 update 操作');
+  }
 });

@@ -56,16 +56,19 @@ sequenceDiagram
     participant User as 用户 (User)
     participant Client as 客户端 (CLI/Web)
     participant Worker as 后端入口 (AI Handler)
+    participant DB as 数据库 (D1 Database)
     participant AI as AI 解析层 (Workers AI)
     participant API as 现有业务接口 (API Handlers)
-    participant DB as 数据库 (D1 Database)
 
     User->>Client: 自然语言描述任务 (Natural Language)
     Client->>Worker: POST /api/tasks/ai {text: "..."} (Single Call)
     
     rect rgb(240, 240, 240)
         Note over Worker, AI: 后端全闭环处理 (Backend Loop)
-        Worker->>AI: 发起语义解析请求 (Internal Parse)
+        Worker->>DB: 获取活跃任务列表 (status != 'completed')
+        DB-->>Worker: 返回任务数据
+        Worker->>Worker: 序列化为 JSON 并执行 12万字符截断
+        Worker->>AI: 发起语义解析请求 (含 Context 注入)
         AI-->>Worker: 返回结构化 JSON {action, fields}
         
         alt 不在白名单内 (如: delete/clear)
@@ -86,38 +89,86 @@ sequenceDiagram
 - **速率限制**：针对 `/api/tasks/ai` 设置独立的 Rate Limit。
 
 ## 6. 系统提示词 (System Prompt)
-后端在调用 AI 模型时，使用了以下经过优化的系统提示词，以确保解析的准确性和结构化输出：
+后端在调用 AI 模型时，使用了以下经过深度优化的系统提示词。该 Prompt 动态注入了系统当前的分类、标签及实时时间，以确保解析的准确性和上下文关联性：
 
 ```text
 You are an AI assistant for a task management system.
 Your goal is to parse natural language input into a structured JSON action.
 Current Date/Time: {localTime} ({userTimezone}).
-Available actions:
-- create: Create a new task. Fields: title (string, required), description (string), priority (low, medium, high), due_date (YYYY-MM-DD HH:mm:ss), remind_at (YYYY-MM-DD HH:mm:ss), tags (string array).
-- update: Update an existing task. Fields: id (number, required), title (string), description (string), priority (low, medium, high), status (pending, completed), due_date (YYYY-MM-DD HH:mm:ss), remind_at (YYYY-MM-DD HH:mm:ss), tags (string array).
-- query: Search for tasks. Fields: q (string, title search), status (pending, completed), priority (low, medium, high), tag_name (string), due_date (YYYY-MM-DD), remind_at (YYYY-MM-DD).
-- complete: Mark a task as completed. Fields: id (number, required).
+
+Available Categories: {categories}
+Available Tags: {existingTags}
+
+Supported Actions and Parameters:
+1. create: Create a new task.
+   - title (string, required): Task title.
+   - description (string): Detailed description.
+   - priority (low, medium, high): Default is 'medium'.
+   - category_id (number): Use the ID from the list above.
+   - due_date (YYYY-MM-DD HH:mm:ss): Deadline.
+   - remind_at (YYYY-MM-DD HH:mm:ss): Reminder time.
+   - recurring_rule (none, daily, weekly, monthly): Repetition frequency.
+   - tags (string array): Names of tags to associate.
+
+2. update: Update an existing task.
+   - id (number, required): The ID of the task to update.
+   - title, description, priority, category_id, due_date, remind_at, recurring_rule, tags: Same as 'create'.
+   - status (pending, completed): Change task status.
+
+3. query: Search for tasks.
+   - q (string): Search text in title or description.
+   - status (pending, completed): Filter by status.
+   - priority (low, medium, high): Filter by priority.
+   - tag_name (string): Filter by a single tag name.
+   - category_id (number): Filter by category ID.
+   - due_date (YYYY-MM-DD): Filter by tasks due on this specific date.
+   - remind_at (YYYY-MM-DD): Filter by tasks with a reminder on this specific date.
+   - has_remind (string: "true" or "false"): Use "true" to find tasks that HAVE any reminder set, "false" for those that don't.
+   - has_due (string: "true" or "false"): Use "true" to find tasks that HAVE any due date set, "false" for those that don't.
+
+4. complete: Mark a task as completed.
+   - id (number, required): The ID of the task.
 
 Return ONLY a JSON object with "action" and "fields" keys.
 Action MUST be one of: create, update, query, complete.
 
 Response Format Example:
 {
-  "action": "create",
+  "action": "query",
   "fields": {
-    "title": "Task title",
-    "due_date": "YYYY-MM-DD HH:mm:ss",
-    "priority": "medium",
-    "tags": ["tag1", "tag2"]
+    "has_remind": "true",
+    "status": "pending"
   }
 }
 
-If the intent is not clear or not covered, return {"action": "none", "fields": {}}.
-For dates/times, resolve relative terms based on the Current Date/Time.
+Important Instructions:
+1. If the user asks for tasks with reminders (e.g., "有提醒的任务"), use action "query" with "has_remind": "true".
+2. If the user provides a short phrase that sounds like a task or a test (e.g., "测试 AI 功能"), prefer "create" with that phrase as the title.
+3. For dates/times, resolve relative terms (like "tomorrow", "next Monday") based on the Current Date/Time.
+4. If a task ID is mentioned, ensure it's mapped to the "id" field.
 ```
+
+## 7. 模糊意图与上下文关联 (Fuzzy Intent & Context)
+为了支持模糊的修改意图（如“把刚才那个任务改成明天”），系统采用 **“增强上下文注入 (Scheme A)”** 方案。
+
+### 7.1 上下文注入机制
+在每次调用 AI 解析之前，后端将自动检索 **所有未完成 (status != 'completed')** 的任务作为静态上下文注入 Prompt：
+- **排除字段**：注入时必须剔除 `metadata` 及其内部的 `ai_context` 字段，以节省 Token 并减少干扰。
+- **任务字段定义**：仅包含 `id`, `title`, `description`, `priority`, `due_date`, `remind_at`, `status`。
+- **长度约束与截断逻辑**：
+    1. **设定安全阈值**：基于 `glm-4.7-flash` 的 131,072 Tokens 限制，为任务上下文预留约 **80,000 Tokens** 的安全空间（折合中英混合文本约 **120,000 字符**），以确保留有充足空间处理系统提示词、用户输入及模型输出。
+    2. **全量获取**：后端首先检索所有状态非 `completed` 的任务。
+    3. **自适应截断**：后端将查询到的所有未完成任务（按 `updated_at` 降序排列）序列化为文本块。若序列化后的总长度 **超出 120,000 字符**，则直接在末尾截断。由于采用了降序排列，这种截断方式能自然且高效地保留时间上最相关的任务。
+
+### 7.2 模糊意图处理流程
+1. **获取数据**：后端执行 `SELECT id, title, description, priority, due_date, remind_at, status FROM tasks WHERE status != 'completed' ORDER BY updated_at DESC`。
+2. **格式化与截断**：将任务列表序列化为 **JSON 字符串**。若结果总长度超过 120,000 字符，则直接截取前 120,000 个字符。
+3. **注入 Prompt**：将处理后的 JSON 文本块放入 System Prompt 的 `### Context: Active Tasks` 部分。
+4. **AI 推理**：AI 根据用户输入的模糊指代（如标题关键词、最近操作逻辑），从上下文中匹配对应的 `id`。
+5. **生成指令**：AI 直接返回标准的 `update` 操作 JSON，其中包含匹配到的任务 `id`。
 
 ---
 **状态**: 已完成 (Phase 1)
 **创建时间**: 2026-03-05
-**最后更新**: 2026-03-05 (根据实现同步：新增系统提示词及解析逻辑描述)
+**最后更新**: 2026-03-05 01:20:00 (新增模糊意图上下文注入方案：基于未闭环任务列表的动态 Prompt 增强)
 ---
