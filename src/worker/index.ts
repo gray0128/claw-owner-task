@@ -10,6 +10,7 @@ import { categoryHandlers } from './handlers/categories';
 import { tagHandlers } from './handlers/tags';
 import { remindHandlers } from './handlers/remind';
 import { logsHandlers } from './handlers/logs';
+import { telegramHandlers } from './handlers/telegram';
 
 export type Bindings = {
   DB: D1Database;
@@ -18,6 +19,8 @@ export type Bindings = {
   TASK_API_KEY: string;
   USER_TIMEZONE: string;
   BARK_URL?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_CHAT_ID?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -35,6 +38,9 @@ app.route('/api/categories', categoryHandlers);
 app.route('/api/tags', tagHandlers);
 app.route('/api/remind', remindHandlers);
 app.route('/api/logs', logsHandlers);
+
+// Telegram Webhook is public and handles its own auth via Chat ID and Telegram Token
+app.route('/api/webhook/telegram', telegramHandlers);
 
 // Root fallback
 app.get('/', (c) => c.text('Claw Owner Task API is running.'));

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { sendBarkNotification } from '../services/bark';
+import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
 import { calculateNextFutureRemindAt } from '../services/recurrence';
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -30,17 +31,63 @@ app.post('/check', async (c) => {
   }
 
   if (channel === 'cloud') {
-    // Cloud trigger -> send to Bark and mark as reminded, then log it
+    // Cloud trigger -> send to Bark and/or Telegram and mark as reminded, then log it
     for (const task of results) {
+      let pushSuccess = false;
+      const payloads: string[] = [];
+
+      // Bark Push
       const barkUrl = c.env.BARK_URL || '';
-      console.log(`[Remind] BARK_URL configured: ${barkUrl ? 'yes' : 'NO (empty)'}`);
-      const { success, payload } = await sendBarkNotification(
-        barkUrl,
-        `任务提醒: ${task.title}`,
-        (task.description as string) || '到期了，快去看看吧！'
-      );
-      console.log(`[Remind] Bark push for task ${task.id} ("${task.title}"): success=${success}`);
-      if (success) {
+      if (barkUrl) {
+        let bSuccess = false;
+        try {
+          const { success, payload } = await sendBarkNotification(
+            barkUrl,
+            `任务提醒: ${task.title}`,
+            (task.description as string) || '到期了，快去看看吧！'
+          );
+          bSuccess = success;
+          if (success && payload) payloads.push(payload);
+        } catch (error) {
+          console.error(`[Remind] Bark push error for task ${task.id}:`, error);
+        }
+        console.log(`[Remind] Bark push for task ${task.id}: success=${bSuccess}`);
+        if (bSuccess) pushSuccess = true;
+      }
+
+      // Telegram Push
+      const telegramToken = c.env.TELEGRAM_BOT_TOKEN || '';
+      const telegramChatId = c.env.TELEGRAM_CHAT_ID || '';
+      if (telegramToken && telegramChatId) {
+        let tSuccess = false;
+        try {
+          const tText = `<b>任务提醒: ${escapeTelegramHTML(task.title as string)}</b>\n\n${escapeTelegramHTML(task.description as string || '到期了，快去看看吧！')}`;
+          const { success, payload } = await sendTelegramNotification(
+            telegramToken,
+            telegramChatId,
+            tText,
+            'HTML'
+          );
+          tSuccess = success;
+          if (success && payload) payloads.push(payload);
+        } catch (error) {
+          console.error(`[Remind] Telegram push error for task ${task.id}:`, error);
+        }
+        console.log(`[Remind] Telegram push for task ${task.id}: success=${tSuccess}`);
+        if (tSuccess) pushSuccess = true;
+      }
+
+      // If no channels configured, we still might want to flip to avoid indefinite looping?
+      // For now, if pushSuccess is true, we update DB.
+      // Wait, if BOTH bark and telegram are not configured, pushSuccess is false, task will stay in remind loop forever.
+      // Let's ensure that if neither is configured, we consider it a success just to move the task along.
+      const noChannelsConfigured = !barkUrl && (!telegramToken || !telegramChatId);
+      if (noChannelsConfigured) {
+        console.warn(`[Remind] No push channels configured for cloud. Simulating success.`);
+        pushSuccess = true;
+      }
+
+      if (pushSuccess) {
         // Update remind_at based on whether it's recurring
         const rule = task.recurring_rule as string;
         if (rule && rule !== 'none' && task.remind_at) {
@@ -51,9 +98,9 @@ app.post('/check', async (c) => {
         }
 
         // Insert into bark_logs
-        if (payload) {
+        for (const p of payloads) {
           await c.env.DB.prepare('INSERT INTO bark_logs (task_id, payload) VALUES (?, ?)')
-            .bind(task.id, payload)
+            .bind(task.id, p)
             .run();
         }
       }

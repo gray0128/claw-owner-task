@@ -1,6 +1,6 @@
 # Claw Owner Task
 
-这是一个专为个人用户和 **AI Agent (OpenCLaw)** 设计的跨平台任务管理工具。支持云端存储与多渠道（Cloud/Agent）提醒。
+这是一个专为个人用户和 **AI Agent (OpenCLaw)** 设计的跨平台任务管理工具。支持云端存储与多渠道（Cloud: **Bark/Telegram**, Agent: **OpenCLaw**）提醒。支持直接在 Telegram 中以自然语言对话方式管理任务。
 
 ## 安装
 
@@ -111,8 +111,18 @@ npm run db:migrate:remote
 ```bash
 npx wrangler secret put TASK_API_KEY
 npx wrangler secret put BARK_URL
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+npx wrangler secret put TELEGRAM_CHAT_ID
 ```
 *(在本地开发时，您可以在项目根目录创建一个 `.dev.vars` 文件并写入这些变量。)*
+
+### 5. 激活 Telegram 机器人交互 (可选)
+为了启用 Telegram 交互，您需要将 Webhook 地址配置到 Telegram：
+```bash
+# 将 <URL> 替换为您的 Worker 线上地址
+curl -F "url=https://<your-worker-subdomain>.workers.dev/api/webhook/telegram" https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
+```
+配置完成后，机器人将仅接收来自 `TELEGRAM_CHAT_ID` 指定用户的指令，并实时回复 AI 处理结果。
 
 ### 4. 部署到云端
 完成以上配置后，将 Worker 部署到您的 Cloudflare 账号：
