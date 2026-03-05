@@ -12,10 +12,7 @@ fn is_json_mode() -> bool {
 /// Print error and exit, respecting --json mode.
 fn handle_error(msg: &str) -> ! {
     if is_json_mode() {
-        eprintln!(
-            "{}",
-            serde_json::json!({"success": false, "error": msg})
-        );
+        eprintln!("{}", serde_json::json!({"success": false, "error": msg}));
     } else {
         eprintln!("\n{msg}\n");
     }
@@ -32,8 +29,8 @@ pub struct ApiClient {
 
 impl ApiClient {
     pub fn new() -> Self {
-        let base_url = env::var("TASK_API_URL")
-            .unwrap_or_else(|_| "http://localhost:8787/api".to_string());
+        let base_url =
+            env::var("TASK_API_URL").unwrap_or_else(|_| "http://localhost:8787/api".to_string());
 
         let api_key = env::var("TASK_API_KEY").unwrap_or_default();
         if api_key.is_empty() {
@@ -143,7 +140,11 @@ impl ApiClient {
     }
 
     pub fn ai_task(&self, text: &str) -> Value {
-        self.request_full("POST", "/tasks/ai", Some(serde_json::json!({ "text": text })))
+        self.request_full(
+            "POST",
+            "/tasks/ai",
+            Some(serde_json::json!({ "text": text })),
+        )
     }
 
     // --- Remind ---
@@ -182,13 +183,16 @@ impl ApiClient {
         if let Some(tid) = task_id {
             params.push(format!("task_id={}", tid));
         }
-        
         let qs = if params.is_empty() {
             String::new()
         } else {
             format!("?{}", params.join("&"))
         };
-        
         self.request("GET", &format!("/logs/bark{}", qs), None)
+    }
+
+    // --- Summary ---
+    pub fn summary(&self) -> Value {
+        self.request_full("POST", "/summary", None)
     }
 }

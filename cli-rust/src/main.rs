@@ -4,7 +4,7 @@ mod update;
 use api::ApiClient;
 use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::process;
 use tabled::{Table, Tabled};
 
@@ -187,6 +187,9 @@ enum Commands {
 
     #[command(hide = true)]
     InternalCheckUpdate,
+
+    /// Summarize pending tasks using AI and create a shared webpage
+    Summary,
 }
 
 // ---------------------------------------------------------------------------
@@ -330,7 +333,10 @@ fn main() {
         if let Err(e) = update::perform_upgrade(json_mode) {
             exit_with_error(json_mode, &e);
         } else if json_mode {
-            println!("{}", serde_json::to_string_pretty(&json!({"success": true})).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&json!({"success": true})).unwrap()
+            );
         }
         return;
     }
@@ -397,9 +403,7 @@ fn main() {
                                 .and_then(|v| v.as_array())
                                 .map(|tags| {
                                     tags.iter()
-                                        .filter_map(|tag| {
-                                            tag.get("name").and_then(|n| n.as_str())
-                                        })
+                                        .filter_map(|tag| tag.get("name").and_then(|n| n.as_str()))
                                         .collect::<Vec<_>>()
                                         .join(", ")
                                 })
@@ -448,12 +452,12 @@ fn main() {
             });
 
             // Parse dates
-            let due_date = due.as_deref().map(|d| {
-                parse_date_str(d).unwrap_or_else(|e| exit_with_error(json_mode, &e))
-            });
-            let remind_at = remind.as_deref().map(|d| {
-                parse_date_str(d).unwrap_or_else(|e| exit_with_error(json_mode, &e))
-            });
+            let due_date = due
+                .as_deref()
+                .map(|d| parse_date_str(d).unwrap_or_else(|e| exit_with_error(json_mode, &e)));
+            let remind_at = remind
+                .as_deref()
+                .map(|d| parse_date_str(d).unwrap_or_else(|e| exit_with_error(json_mode, &e)));
 
             let mut payload = json!({ "title": title });
             if let Some(v) = desc {
@@ -532,14 +536,12 @@ fn main() {
                 }
             }
             if let Some(ref v) = due {
-                payload["due_date"] = json!(
-                    parse_date_str(v).unwrap_or_else(|e| exit_with_error(json_mode, &e))
-                );
+                payload["due_date"] =
+                    json!(parse_date_str(v).unwrap_or_else(|e| exit_with_error(json_mode, &e)));
             }
             if let Some(ref v) = remind {
-                payload["remind_at"] = json!(
-                    parse_date_str(v).unwrap_or_else(|e| exit_with_error(json_mode, &e))
-                );
+                payload["remind_at"] =
+                    json!(parse_date_str(v).unwrap_or_else(|e| exit_with_error(json_mode, &e)));
             }
             if let Some(v) = rule {
                 payload["recurring_rule"] = json!(v);
@@ -704,9 +706,17 @@ fn main() {
             println!("\n[AI interpreted as: {action}]");
 
             let data = res.get("data").unwrap_or(&Value::Null);
-            let success = res.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+            let success = res
+                .get("success")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
 
-            if success && (action == "query" || action == "create" || action == "update" || action == "complete") {
+            if success
+                && (action == "query"
+                    || action == "create"
+                    || action == "update"
+                    || action == "complete")
+            {
                 let tasks_to_show = if data.is_array() {
                     data.as_array().unwrap().clone()
                 } else if data.is_object() && data.get("id").is_some() {
@@ -758,11 +768,91 @@ fn main() {
                 } else if action == "create" {
                     println!("Task created successfully with ID: {}", val_str(data, "id"));
                 } else {
-                    let msg = data.get("message").and_then(|v| v.as_str()).unwrap_or("Action executed successfully.");
+                    let msg = data
+                        .get("message")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Action executed successfully.");
                     println!("{msg}");
                 }
             } else if success {
                 println!("{}", serde_json::to_string_pretty(data).unwrap());
+            }
+        }
+
+        // --- Summary ---
+        Commands::Summary => {
+            if !json_mode {
+                println!("AI is generating summary...");
+            }
+            let res = client.summary();
+            if format_output(json_mode, &res) {
+                return;
+            }
+
+            let success = res
+                .get("success")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            if success {
+                let data = res.get("data").unwrap_or(&Value::Null);
+                if let Some(summary) = data.get("summary") {
+                    println!("\n📊 {}", val_str(summary, "title"));
+
+                    if let Some(stats) = summary.get("stats") {
+                        println!(
+                            "概览: 待处理 {} | 处理中 {} | 已延期 {}",
+                            stats
+                                .get("total_pending")
+                                .map(|v| v.to_string())
+                                .unwrap_or_else(|| "0".to_string()),
+                            stats
+                                .get("in_progress")
+                                .map(|v| v.to_string())
+                                .unwrap_or_else(|| "0".to_string()),
+                            stats
+                                .get("overdue")
+                                .map(|v| v.to_string())
+                                .unwrap_or_else(|| "0".to_string())
+                        );
+                    }
+
+                    if let Some(core_tasks) = summary.get("core_tasks").and_then(|v| v.as_array()) {
+                        if !core_tasks.is_empty() {
+                            println!("\n🎯 今日核心必做:");
+                            for t in core_tasks {
+                                println!(
+                                    "  - 🔥 {} ({})",
+                                    val_str(t, "title"),
+                                    val_str(t, "reason")
+                                );
+                            }
+                        }
+                    }
+
+                    if let Some(warnings) = summary.get("warnings").and_then(|v| v.as_array()) {
+                        if !warnings.is_empty() {
+                            println!("\n⚠️ 风险与拖延警告:");
+                            for w in warnings {
+                                println!(
+                                    "  - ❗ {} ({})",
+                                    val_str(w, "title"),
+                                    val_str(w, "suggestion")
+                                );
+                            }
+                        }
+                    }
+
+                    println!("\n💡 综合评估: {}", val_str(summary, "overall_assessment"));
+                }
+
+                println!("\n🔗 详细网页链接 (24小时内有效): {}", val_str(data, "url"));
+            } else {
+                let error = res.get("error");
+                let msg = error
+                    .and_then(|e| e.get("message"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Failed to generate summary.");
+                println!("Error: {}", msg);
             }
         }
     }

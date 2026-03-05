@@ -241,7 +241,7 @@ Important Instructions:
         return c.json(response(false, null, { code: 'NOT_SUPPORTED', message: `Action ${action} is not yet implemented.` }), 500);
     }
 
-    const data = await internalRes.json();
+    const data: any = await internalRes.json();
     return c.json({ ...data, ai_parsed: result });
 
   } catch (err: any) {
