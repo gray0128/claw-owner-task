@@ -26,6 +26,7 @@ fn handle_error(msg: &str) -> ! {
 pub struct ApiClient {
     base_url: String,
     api_key: String,
+    timezone: String,
     client: Client,
 }
 
@@ -41,9 +42,12 @@ impl ApiClient {
             );
         }
 
+        let timezone = env::var("USER_TIMEZONE").unwrap_or_else(|_| "Asia/Shanghai".to_string());
+
         Self {
             base_url,
             api_key,
+            timezone,
             client: Client::builder()
                 .timeout(Duration::from_secs(60))
                 .build()
@@ -64,7 +68,8 @@ impl ApiClient {
 
         let builder = builder
             .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", self.api_key));
+            .header("Authorization", format!("Bearer {}", self.api_key))
+            .header("X-User-Timezone", &self.timezone);
 
         let builder = if let Some(b) = body {
             builder.body(b.to_string())

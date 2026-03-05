@@ -26,31 +26,59 @@ const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
   if (/[Z]|[+-]\d{2}:\d{2}$/.test(d)) {
     return toSqliteUtc(new Date(d));
   }
-  // Floating time: assume it is in the configured USER_TIMEZONE
+  
+  // Floating time from AI/user: assume it is in the specified user timezone
   let normalized = d.replace(' ', 'T');
   if (normalized.length === 10) normalized += 'T00:00:00';
   if (normalized.length === 16) normalized += ':00';
 
   try {
-    // Use Intl to get the offset for the specified timezone at that date
-    const date = new Date(normalized + 'Z');
-    const localDateStr = date.toLocaleString('en-US', { timeZone, hour12: false });
-    const utcDateStr = date.toLocaleString('en-US', { timeZone: 'UTC', hour12: false });
-    const localDate = new Date(localDateStr);
-    const utcDate = new Date(utcDateStr);
-    const offsetMin = (localDate.getTime() - utcDate.getTime()) / 60000;
+    // Correct way to parse a floating time string as being in a specific timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
 
-    const hours = Math.floor(Math.abs(offsetMin) / 60).toString().padStart(2, '0');
-    const mins = (Math.abs(offsetMin) % 60).toString().padStart(2, '0');
-    const sign = offsetMin >= 0 ? '+' : '-';
-    return toSqliteUtc(new Date(normalized + sign + hours + ':' + mins));
+    // We need to find the UTC time that, when formatted in `timeZone`, matches `normalized`
+    // A simpler approach in modern JS:
+    const dt = new Date(normalized); // This treats it as local to the RUNTIME (UTC in Workers)
+    // We need to adjust it.
+    
+    // Using a more robust approach for Workers environment:
+    // 1. Parse as UTC first
+    const utcDate = new Date(normalized + 'Z');
+    // 2. Get the "local" representation of that UTC date in the target timezone
+    const parts = formatter.formatToParts(utcDate);
+    const partMap: Record<string, string> = {};
+    parts.forEach(p => partMap[p.type] = p.value);
+    
+    const formattedInTz = `${partMap.year}-${partMap.month}-${partMap.day}T${partMap.hour}:${partMap.minute}:${partMap.second}Z`;
+    const offsetDate = new Date(formattedInTz);
+    
+    // Difference tells us how far off the "UTC-as-local" interpretation was
+    const diff = utcDate.getTime() - offsetDate.getTime();
+    return toSqliteUtc(new Date(utcDate.getTime() + diff));
   } catch (e) {
     return toSqliteUtc(new Date(d));
   }
 };
 
+// Helper: convert UTC string "YYYY-MM-DD HH:MM:SS" back to localized string
+const fromSqliteUtc = (utcStr: string | null, timeZone: string = 'Asia/Shanghai'): string | null => {
+  if (!utcStr) return null;
+  const date = new Date(utcStr.replace(' ', 'T') + 'Z');
+  return date.toLocaleString('zh-CN', { timeZone, hour12: false }).replace(/\//g, '-');
+};
+
 // GET /api/tasks - List tasks
 app.get('/', async (c) => {
+  const userTimezone = (c.get as any)('userTimezone') || 'Asia/Shanghai';
   const q = c.req.query('q');
   const status = c.req.query('status');
   const tagId = c.req.query('tag');
@@ -125,6 +153,11 @@ app.get('/', async (c) => {
   // Parse tags JSON string to array
   const formattedResults = results.map(row => ({
     ...row,
+    due_date: fromSqliteUtc(row.due_date as string, userTimezone),
+    remind_at: fromSqliteUtc(row.remind_at as string, userTimezone),
+    completed_at: fromSqliteUtc(row.completed_at as string, userTimezone),
+    created_at: fromSqliteUtc(row.created_at as string, userTimezone),
+    updated_at: fromSqliteUtc(row.updated_at as string, userTimezone),
     tags: row.tags ? JSON.parse(row.tags as string) : [],
     metadata: row.metadata ? JSON.parse(row.metadata as string) : null
   }));
@@ -134,6 +167,7 @@ app.get('/', async (c) => {
 
 // GET /api/tasks/:id - Get single task
 app.get('/:id', async (c) => {
+  const userTimezone = (c.get as any)('userTimezone') || 'Asia/Shanghai';
   const id = c.req.param('id');
   const query = `
     SELECT t.*, c.name as category_name, c.color as category_color,
@@ -152,6 +186,11 @@ app.get('/:id', async (c) => {
 
   const formattedResult = {
     ...result,
+    due_date: fromSqliteUtc(result.due_date as string, userTimezone),
+    remind_at: fromSqliteUtc(result.remind_at as string, userTimezone),
+    completed_at: fromSqliteUtc(result.completed_at as string, userTimezone),
+    created_at: fromSqliteUtc(result.created_at as string, userTimezone),
+    updated_at: fromSqliteUtc(result.updated_at as string, userTimezone),
     tags: result.tags ? JSON.parse(result.tags as string) : [],
     metadata: result.metadata ? JSON.parse(result.metadata as string) : null
   };
@@ -364,6 +403,11 @@ app.put('/:id', async (c) => {
     const updatedTask = await c.env.DB.prepare(updatedTaskQuery).bind(id).first();
     const formattedTask = {
       ...updatedTask,
+      due_date: fromSqliteUtc(updatedTask?.due_date as string, userTimezone),
+      remind_at: fromSqliteUtc(updatedTask?.remind_at as string, userTimezone),
+      completed_at: fromSqliteUtc(updatedTask?.completed_at as string, userTimezone),
+      created_at: fromSqliteUtc(updatedTask?.created_at as string, userTimezone),
+      updated_at: fromSqliteUtc(updatedTask?.updated_at as string, userTimezone),
       tags: updatedTask?.tags ? JSON.parse(updatedTask.tags as string) : [],
       metadata: updatedTask?.metadata ? JSON.parse(updatedTask.metadata as string) : null
     };
