@@ -1,6 +1,6 @@
 [package]
 name = "claw-task"
-version = "1.6.4"
+version = "1.7.0"
 edition = "2024"
 description = "Claw Owner Task CLI - A minimalist task manager for humans and AI."
 

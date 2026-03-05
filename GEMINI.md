@@ -8,7 +8,7 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 ## 技术栈与核心组件
 - **后端 (API)**: Cloudflare Workers + TypeScript。提供自发现接口、Bark 推送（含审计日志记录与过期清理）、元数据处理、强制鉴权及严格的时间格式校验。
 - **数据库**: Cloudflare D1 (SQLite)。存储 UTC 时间、AI 上下文及关联标签。
-- **跨平台 CLI (`claw-task`)**: 提供 Node.js 版 (`src/cli/`) 和 Rust 高性能版 (`cli-rust/`) 两种实现，功能完全一致。支持多平台构建（含 Linux Musl）。
+- **跨平台 CLI (`claw-task`)**: 基于 Rust 开发的高性能二进制实现。支持多平台构建、静默版本检查及一键自动升级。
 - **前端 (Web)**: 原生 HTML/CSS/JS (No-build)，利用浏览器原生 ES Modules，极简且功能完备。
 
 ## 当前状态
@@ -38,14 +38,12 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - **运行 API 测试**: `TASK_API_KEY=your_test_api_key_here npm test` (运行 `tests/run_api_tests.js` 时需指定测试 Key 避免 Shell 环境变量覆盖)
 - **运行 Rust 测试**: `cd cli-rust && cargo test`
 - **数据库迁移**: `npm run db:migrate:local`
-- **CLI (Node.js)**: `node src/cli/index.js [command]` 或 `claw-task [command]`
 - **CLI (Rust)**: `cd cli-rust && cargo run -- [command]`
 - **编译 Rust 版**: `cd cli-rust && cargo build --release`
 
 ## 目录结构
 - `src/worker/`: 后端中间件、服务逻辑、数据库迁移。
 - `src/web/`: 原生 Web 界面。
-- `src/cli/`: 跨平台命令行工具 (Node.js 版)。
 - `cli-rust/`: 跨平台命令行工具 (Rust 高性能版)。
 - `docs/`: 包含 `需求说明.md`, `技术架构.md`, `开发计划.md`, `缺陷修复记录.md`。
 - `tests/`: 包含测试计划、Mock 脚本及自动化 API 测试脚本 (`run_api_tests.js`)。
@@ -58,9 +56,10 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 
 ---
-**版本**: 1.6.4
-**更新时间**: 2026-03-05 02:10:00
+**版本**: 1.7.0
+**更新时间**: 2026-03-05 02:20:00
 **变更历史**:
+- 2026-03-05: 发布 1.7.0，重大架构优化：彻底移除 Node.js 版 CLI 及其相关依赖（commander），全面转向基于 Rust 实现的高性能二进制 CLI。精简项目结构，专注单一高效的终端工具维护。
 - 2026-03-05: 发布 1.6.4，新增 `ENABLE_AI` 后端开关（默认为开启），允许通过 Worker 配置禁用 AI 语义解析功能；更新 README，补充 Cloudflare Workers AI 每日调用限额及隐私说明。
 - 2026-03-05: 发布 1.6.3，优化 CLI 交互：AI 解析提示语更新为英文并增加动态动画；延长 Rust CLI 超时时间至 60s 以适配长耗时 AI 解析；更新 README 明确 `sudo` 升级指令及别名限制。
 - 2026-03-05: 发布 1.6.2，修复 GLM-4 返回内容中的循环引用 Bug（500 错误）；优化 CLI 交互，新增 AI 解析中状态提示。

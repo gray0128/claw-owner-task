@@ -34,31 +34,16 @@ sudo claw-task upgrade
 > 1. **权限要求**：由于二进制文件通常安装在 `/usr/local/bin/` 等系统目录下，升级操作**必须使用 `sudo`** 提升权限。
 > 2. **禁止使用别名**：升级时**请务必直接调用 `claw-task` 原名**，不要使用您自定义的别名（如 `ct upgrade`）。这是因为 `sudo` 环境通常不会继承您的 shell 别名设置，使用别名会导致系统找不到命令。
 
-### 方案 B：自行编译 Rust 版本
+### 方案 B：自行编译源码
 如果您有源码并希望手动编译高性能二进制：
 1. 确保已安装 [Rust 工具链](https://rustup.rs/)。
 2. 运行：`cd cli-rust && cargo build --release`。
 3. 编译后的文件位于 `cli-rust/target/release/claw-task`。
 
-### 方案 C：通过 Node.js
-1. 确保已安装 Node.js (>= 18.0.0)。
-2. 克隆仓库并安装依赖，进行全局链接：
-   ```bash
-   git clone https://github.com/gray0128/claw-owner-task.git
-   cd claw-owner-task
-   npm install
-   npm link
-   ```
-   *(或者使用 `npm install -g .`)*
-
 ### 设置别名（可选）
 安装完成后，您可以在 `~/.bashrc` 或 `~/.zshrc` 中设置别名以简化使用：
 ```bash
-# 二进制版本
 alias ct='/usr/local/bin/claw-task'
-
-# 或 Node.js 版本
-alias ct='claw-task'
 ```
 之后即可通过 `ct` 快速调用，例如：`ct list`、`ct add "买牛奶"`。
 
