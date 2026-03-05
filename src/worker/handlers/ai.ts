@@ -36,6 +36,10 @@ function tryParseJson(text: string): any {
 }
 
 app.post('/', async (c) => {
+  if (c.env.ENABLE_AI === 'false' || c.env.ENABLE_AI === false) {
+    return c.json(response(false, null, { code: 'DISABLED', message: 'AI functionality is disabled by administrator.' }), 403);
+  }
+
   const { text } = await c.req.json();
   if (!text) return c.json(response(false, null, { code: 'INVALID_INPUT', message: 'Text is required' }), 400);
 

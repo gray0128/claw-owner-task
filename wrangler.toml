@@ -12,6 +12,7 @@ migrations_dir = "src/worker/db/migrations"
 # Environment Variables
 [vars]
 USER_TIMEZONE = "Asia/Shanghai"
+ENABLE_AI = true
 
 [ai]
 binding = "AI"

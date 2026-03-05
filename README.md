@@ -68,6 +68,12 @@ alias ct='claw-task'
 - `TASK_API_URL`: 后端 API 基础地址（默认为 `http://localhost:8787/api`，部署到云端后需要修改为实际地址）
 - `TASK_API_KEY`: API 鉴权密钥
 - `USER_TIMEZONE`: 时区（例如 `Asia/Shanghai`），默认为 UTC+8
+- `ENABLE_AI`: 是否开启 AI 语义解析功能（可选，默认为 `true`）。若需关闭，请在 Cloudflare Worker 的 `Vars` 中设置为 `false`。
+
+> ℹ️ **关于 AI 功能的提示**：
+> 1. **服务提供商**：语义解析功能由 [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) 驱动。
+> 2. **额度限制**：Cloudflare 对 Workers AI 的免费套餐设有**每日调用限额**（通常为 10,000 Neurons/天，具体以 Cloudflare 官网为准）。若超过限额，AI 相关命令将返回错误。
+> 3. **隐私与安全**：仅当您主动调用 `ai` 命令时，输入的文本才会被发送至 Cloudflare AI 模型进行解析。如果您对隐私有极高要求或不需要此功能，可以通过环境变量 `ENABLE_AI=false` 完全禁用后端解析接口。
 
 如果作为本地用户使用，可以将其添加到 `~/.bashrc` 或 `~/.zshrc` 中：
 ```bash

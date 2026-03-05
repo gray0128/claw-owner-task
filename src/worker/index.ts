@@ -14,6 +14,7 @@ import { logsHandlers } from './handlers/logs';
 export type Bindings = {
   DB: D1Database;
   AI: any;
+  ENABLE_AI: string | boolean;
   TASK_API_KEY: string;
   USER_TIMEZONE: string;
   BARK_URL?: string;
