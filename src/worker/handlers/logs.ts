@@ -29,10 +29,7 @@ app.get('/bark', async (c) => {
         query += ` ORDER BY pushed_at DESC LIMIT ?`;
         params.push(limit);
 
-        let stmt = c.env.DB.prepare(query);
-        for (const p of params) {
-            stmt = stmt.bind(p);
-        }
+        let stmt = c.env.DB.prepare(query).bind(...params);
 
         const { results } = await stmt.all();
         return c.json(response(true, results));

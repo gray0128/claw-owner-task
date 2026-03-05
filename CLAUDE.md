@@ -58,9 +58,10 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
 
 ---
-**版本**: 1.7.1
-**更新时间**: 2026-03-05 01:10:00
+**版本**: 1.7.8
+**更新时间**: 2026-03-05 21:40:00
 **变更历史**:
+- 2026-03-05: 更新至 1.7.8，彻底重构提醒系统架构。移除了造成死锁与状态纠缠的 `reminded` 字段。当前 Cron 探测频率提升至**每分钟 1 次**。系统在推送后，会自动计算并将周期任务推移至**下一个未到来的未来时间**；非周期任务及「已完成任务」会自动将其 `remind_at` 字段置空。这实现了提醒轮转与人工 Complete 验证流的完全解耦。
 - 2026-03-05: 发布 CLI 1.5.6，将 reqwest 切换至 `rustls-tls`，修复跨平台构建时 OpenSSL 库缺失导致的编译错误。
 - 2026-03-05: 整合 GEMINI.md 与 CLAUDE.md 文档内容，统一项目认知。
 - 2026-03-05: 发布 CLI 专属版本 1.5.5，为 GitHub Actions 构建脚本引入 `cross` 工具，增加 `aarch64-unknown-linux-musl` 和 `x86_64-unknown-linux-musl` 的完整静态链接构建支持。

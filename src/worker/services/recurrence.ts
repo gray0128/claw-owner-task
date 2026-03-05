@@ -46,10 +46,59 @@ export function calculateNextRemindAt(currentDueDateStr: string, currentRemindAt
 
   // Calculate the offset in milliseconds
   const offsetMs = currentDueDate.getTime() - currentRemindAt.getTime();
-  
+
   const nextRemindAt = new Date(nextDueDate.getTime() - offsetMs);
-  
+
   return formatSqliteDate(nextRemindAt);
+}
+
+/**
+ * Calculates the next remind_at date based on the current remind_at and recurring rule,
+ * ensuring the returned date is in the future (to avoid notification storms).
+ */
+export function calculateNextFutureRemindAt(currentRemindAtStr: string, rule: string): string | null {
+  if (rule === 'none') {
+    return null;
+  }
+
+  const parseUTC = (d: string) => new Date(d.endsWith('Z') ? d : d + 'Z');
+  let date = parseUTC(currentRemindAtStr);
+
+  if (isNaN(date.getTime())) {
+    return null;
+  }
+
+  const now = new Date();
+
+  // Loop until the date is in the future
+  // Limit iterations to prevent infinite loops
+  let iterations = 0;
+  while (date <= now && iterations < 1000) {
+    switch (rule) {
+      case 'daily':
+        date.setUTCDate(date.getUTCDate() + 1);
+        break;
+      case 'weekly':
+        date.setUTCDate(date.getUTCDate() + 7);
+        break;
+      case 'monthly':
+        date.setUTCMonth(date.getUTCMonth() + 1);
+        break;
+      default:
+        return null; // Unsupported rule
+    }
+    iterations++;
+  }
+
+  // If after 1000 iterations it's still not in the future, just jump it based on current time
+  if (date <= now) {
+    date = now;
+    if (rule === 'daily') date.setUTCDate(date.getUTCDate() + 1);
+    else if (rule === 'weekly') date.setUTCDate(date.getUTCDate() + 7);
+    else if (rule === 'monthly') date.setUTCMonth(date.getUTCMonth() + 1);
+  }
+
+  return formatSqliteDate(date);
 }
 
 function formatSqliteDate(date: Date): string {

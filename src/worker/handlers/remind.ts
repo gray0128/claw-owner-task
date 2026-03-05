@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { sendBarkNotification } from '../services/bark';
+import { calculateNextFutureRemindAt } from '../services/recurrence';
 
 const app = new Hono<{ Bindings: Bindings }>();
 const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
@@ -15,14 +16,14 @@ app.post('/check', async (c) => {
   // Use datetime() to normalize remind_at format for reliable comparison with CURRENT_TIMESTAMP
   // (remind_at may be stored as ISO "2026-03-04T07:40:49.000Z" while CURRENT_TIMESTAMP is "2026-03-04 07:40:49")
   const query = `
-    SELECT id, title, description, due_date
+    SELECT id, title, description, due_date, remind_at, recurring_rule
     FROM tasks 
     WHERE status = 'pending' 
       AND remind_at IS NOT NULL 
       AND datetime(remind_at) <= datetime('now') 
-      AND reminded = 0
   `;
   const { results } = await c.env.DB.prepare(query).all();
+  console.log(`[Remind] Channel: ${channel}, Found ${results.length} task(s) to remind.`);
 
   if (results.length === 0) {
     return c.json(response(true, { tasks: [], message: 'No tasks to remind' }));
@@ -31,14 +32,23 @@ app.post('/check', async (c) => {
   if (channel === 'cloud') {
     // Cloud trigger -> send to Bark and mark as reminded, then log it
     for (const task of results) {
+      const barkUrl = c.env.BARK_URL || '';
+      console.log(`[Remind] BARK_URL configured: ${barkUrl ? 'yes' : 'NO (empty)'}`);
       const { success, payload } = await sendBarkNotification(
-        c.env.BARK_URL || '',
+        barkUrl,
         `任务提醒: ${task.title}`,
         (task.description as string) || '到期了，快去看看吧！'
       );
+      console.log(`[Remind] Bark push for task ${task.id} ("${task.title}"): success=${success}`);
       if (success) {
-        // Mark as reminded
-        await c.env.DB.prepare('UPDATE tasks SET reminded = 1 WHERE id = ?').bind(task.id).run();
+        // Update remind_at based on whether it's recurring
+        const rule = task.recurring_rule as string;
+        if (rule && rule !== 'none' && task.remind_at) {
+          const nextRemindAt = calculateNextFutureRemindAt(task.remind_at as string, rule);
+          await c.env.DB.prepare('UPDATE tasks SET remind_at = ? WHERE id = ?').bind(nextRemindAt, task.id).run();
+        } else {
+          await c.env.DB.prepare('UPDATE tasks SET remind_at = NULL WHERE id = ?').bind(task.id).run();
+        }
 
         // Insert into bark_logs
         if (payload) {
@@ -59,11 +69,15 @@ app.post('/check', async (c) => {
     return c.json(response(true, { tasks: results, message: 'Cloud push executed and cleaned up logs' }));
   } else {
     // Agent trigger -> just return the tasks, agent handles the notification
-    // The Agent should ideally call another endpoint to mark them as reminded, 
-    // or we can optimistically mark them here. For simplicity and as per current design,
-    // we mark them here assuming the agent will succeed in notifying.
+    // We update the remind_at assuming the agent will succeed in notifying.
     for (const task of results) {
-      await c.env.DB.prepare('UPDATE tasks SET reminded = 1 WHERE id = ?').bind(task.id).run();
+      const rule = task.recurring_rule as string;
+      if (rule && rule !== 'none' && task.remind_at) {
+        const nextRemindAt = calculateNextFutureRemindAt(task.remind_at as string, rule);
+        await c.env.DB.prepare('UPDATE tasks SET remind_at = ? WHERE id = ?').bind(nextRemindAt, task.id).run();
+      } else {
+        await c.env.DB.prepare('UPDATE tasks SET remind_at = NULL WHERE id = ?').bind(task.id).run();
+      }
     }
     return c.json(response(true, { tasks: results, message: 'Agent check executed' }));
   }

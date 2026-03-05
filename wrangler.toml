@@ -18,9 +18,9 @@ ENABLE_AI = true
 binding = "AI"
 
 # Scheduled Tasks (Cron Triggers)
-# triggers every 5 minutes for cloud bark notifications
+# triggers every 1 minute for cloud bark notifications
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["* * * * *"]
 
 [dev]
 port = 8787

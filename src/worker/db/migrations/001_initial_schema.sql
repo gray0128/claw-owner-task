@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS tasks (
   recurring_rule TEXT DEFAULT 'none',
   due_date DATETIME,
   remind_at DATETIME,
-  reminded INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL

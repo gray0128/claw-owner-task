@@ -26,7 +26,7 @@ const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
   if (/[Z]|[+-]\d{2}:\d{2}$/.test(d)) {
     return toSqliteUtc(new Date(d));
   }
-  
+
   // Floating time from AI/user: assume it is in the specified user timezone
   let normalized = d.replace(' ', 'T');
   if (normalized.length === 10) normalized += 'T00:00:00';
@@ -49,7 +49,7 @@ const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
     // A simpler approach in modern JS:
     const dt = new Date(normalized); // This treats it as local to the RUNTIME (UTC in Workers)
     // We need to adjust it.
-    
+
     // Using a more robust approach for Workers environment:
     // 1. Parse as UTC first
     const utcDate = new Date(normalized + 'Z');
@@ -57,10 +57,10 @@ const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
     const parts = formatter.formatToParts(utcDate);
     const partMap: Record<string, string> = {};
     parts.forEach(p => partMap[p.type] = p.value);
-    
+
     const formattedInTz = `${partMap.year}-${partMap.month}-${partMap.day}T${partMap.hour}:${partMap.minute}:${partMap.second}Z`;
     const offsetDate = new Date(formattedInTz);
-    
+
     // Difference tells us how far off the "UTC-as-local" interpretation was
     const diff = utcDate.getTime() - offsetDate.getTime();
     return toSqliteUtc(new Date(utcDate.getTime() + diff));
@@ -286,16 +286,12 @@ app.put('/:id/complete', async (c) => {
   if (rule !== 'none' && task.due_date) {
     // Calculate next occurrence
     const nextDueDate = calculateNextOccurrence(task.due_date as string, rule);
-    let nextRemindAt = null;
-    if (task.remind_at && nextDueDate) {
-      nextRemindAt = calculateNextRemindAt(task.due_date as string, task.remind_at as string, nextDueDate);
-    }
 
-    query = `UPDATE tasks SET status = 'pending', due_date = ?, remind_at = ?, reminded = 0, updated_at = CURRENT_TIMESTAMP, completed_at = NULL WHERE id = ?`;
-    params = [nextDueDate, nextRemindAt, id];
+    query = `UPDATE tasks SET status = 'pending', due_date = ?, remind_at = NULL, updated_at = CURRENT_TIMESTAMP, completed_at = NULL WHERE id = ?`;
+    params = [nextDueDate, id];
   } else {
     // Normal completion
-    query = `UPDATE tasks SET status = 'completed', updated_at = CURRENT_TIMESTAMP, completed_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    query = `UPDATE tasks SET status = 'completed', remind_at = NULL, updated_at = CURRENT_TIMESTAMP, completed_at = CURRENT_TIMESTAMP WHERE id = ?`;
     params = [id];
   }
 
