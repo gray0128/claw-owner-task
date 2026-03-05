@@ -14,16 +14,28 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: claw-task-linux
+            artifact_name: claw-task-linux-amd64
+            use_cross: false
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: claw-task-linux-musl-amd64
+            use_cross: true
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            artifact_name: claw-task-linux-musl-arm64
+            use_cross: true
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact_name: claw-task-macos-arm64
+            use_cross: false
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: claw-task-macos-x64
+            use_cross: false
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: claw-task.exe
+            use_cross: false
 
     steps:
       - uses: actions/checkout@v4
@@ -33,9 +45,21 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Install cross
+        if: matrix.use_cross == true
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
       - name: Build Release Binary
         working-directory: cli-rust
-        run: cargo build --release --target ${{ matrix.target }}
+        run: |
+          if [ "${{ matrix.use_cross }}" == "true" ]; then
+            cross build --release --target ${{ matrix.target }}
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
+        shell: bash
 
       - name: Prepare artifact (Unix)
         if: runner.os != 'Windows'
@@ -69,7 +93,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            bin-dist/claw-task-linux
+            bin-dist/claw-task-linux-amd64
+            bin-dist/claw-task-linux-musl-amd64
+            bin-dist/claw-task-linux-musl-arm64
             bin-dist/claw-task-macos-arm64
             bin-dist/claw-task-macos-x64
             bin-dist/claw-task.exe
