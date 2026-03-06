@@ -268,7 +268,16 @@ authSummaryHandlers.post('/', async (c) => {
   `).bind(uuid, JSON.stringify(summaryObj)).run();
 
   const requestUrl = new URL(c.req.url);
-  const summaryUrl = `${requestUrl.protocol}//${requestUrl.host}/summary/${uuid}`;
+  // Determine public base URL: 1. env.BASE_URL, 2. X-Forwarded-Host header, 3. request.url host
+  let summaryUrl;
+  if (c.env.BASE_URL) {
+    const base = c.env.BASE_URL.endsWith('/') ? c.env.BASE_URL.slice(0, -1) : c.env.BASE_URL;
+    summaryUrl = `${base}/summary/${uuid}`;
+  } else {
+    const host = c.req.header('x-forwarded-host') || requestUrl.host;
+    const protocol = c.req.header('x-forwarded-proto') || requestUrl.protocol.replace(':', '');
+    summaryUrl = `${protocol}://${host}/summary/${uuid}`;
+  }
   
   let barkPushUrl = null;
   if (c.env.BARK_URL) {

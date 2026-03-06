@@ -19,6 +19,7 @@ export type Bindings = {
   ENABLE_AI: string | boolean;
   TASK_API_KEY: string;
   USER_TIMEZONE: string;
+  BASE_URL?: string;
   BARK_URL?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;

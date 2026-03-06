@@ -117,17 +117,57 @@ npx wrangler secret put TELEGRAM_CHAT_ID
 *(在本地开发时，您可以在项目根目录创建一个 `.dev.vars` 文件并写入这些变量。)*
 
 ### 5. 激活 Telegram 机器人交互 (可选)
-为了启用 Telegram 交互，您需要将 Webhook 地址配置到 Telegram：
+
+为了启用 Telegram 交互，建议您通过 `Secrets` 存储敏感信息，以防止部署时被覆盖：
+
 ```bash
-# 将 <URL> 替换为您的 Worker 线上地址
-curl -F "url=https://<your-worker-subdomain>.workers.dev/api/webhook/telegram" https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
+# 设置机器人 Token
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+# 设置允许交互的 Chat ID (您的个人 Telegram ID)
+npx wrangler secret put TELEGRAM_CHAT_ID
 ```
-配置完成后，机器人将仅接收来自 `TELEGRAM_CHAT_ID` 指定用户的指令，并实时回复 AI 处理结果。
+
+配置完成后，您**必须**手动将 Webhook 地址关联到 Telegram 服务器：
+
+```bash
+# 将 <YOUR_BOT_TOKEN> 替换为您的 Token
+# 将 <YOUR_WORKER_URL> 替换为您的 Worker 线上地址 (需包含 /api/webhook/telegram)
+curl -F "url=https://<YOUR_WORKER_URL>/api/webhook/telegram" https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
+```
 
 **支持的指令：**
 - **自然语言对话**：直接发送“帮我创建明天下午三点的会议”等内容，AI 将自动解析并处理。
 - **`/summary` (或 `/总结`)**：立即生成任务总结报告并推送到所有配置好的渠道。
 - **`/add <任务标题>` (或 `/添加`)**：快速创建一个任务，绕过 AI 解析以确保 100% 精确度（例如：`/add 买牛奶`）。
+
+**常见问题排查：**
+- **发送消息无反馈**：请检查 `curl` 关联 Webhook 是否成功（返回 `{"ok":true...}`），并确认 `TELEGRAM_CHAT_ID` 是否与您的账号 ID 一致。
+- **`curl` 返回 401**：说明 `TELEGRAM_BOT_TOKEN` 不正确，请检查是否完整包含了 `bot` 前缀且没有多余空格。
+- **部署后配置消失**：请勿在 `wrangler.toml` 中明文填写 Token，始终优先使用 `wrangler secret put`。
+
+### 6. 配置云端自动总结 (可选)
+
+系统支持在指定时间点自动生成 AI 任务总结报告，并通过所有已激活的渠道（Bark/Telegram）主动推送到您的终端。
+
+**启用条件：**
+1.  **环境变量配置**：
+    - `CRON_SUMMARY_TIME`: 设置自动触发的时间点（基于 `USER_TIMEZONE`）。支持**多个时间点**，以英文逗号分隔。
+    - `ENABLE_AI`: 必须为 `true`（默认值）。
+2.  **Cron 触发器**：确保 `wrangler.toml` 中配置了每分钟执行一次的触发器（项目默认已包含）。
+
+**配置方法：**
+建议直接在 `wrangler.toml` 的 `[vars]` 部分进行配置：
+```toml
+[vars]
+# 示例：每天早上 08:30 和晚上 21:00 自动生成总结
+CRON_SUMMARY_TIME = "08:30,21:00"
+```
+或者也可以通过 Cloudflare 控制台 -> Settings -> Variables -> **Environment Variables** 处进行修改（无需重新部署即可生效）。
+
+**示例场景：**
+- **单时间点**：`09:00` (每天上午 9 点发送昨日总结与今日计划)
+- **多时间点**：`08:00,12:00,20:00` (早中晚三次状态同步)
+- **时区注意**：时间点匹配严格遵循您设置的 `USER_TIMEZONE`。例如设置 `Asia/Shanghai`，则 `08:00` 即为北京时间上午 8 点。
 
 ### 4. 部署到云端
 完成以上配置后，将 Worker 部署到您的 Cloudflare 账号：
