@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { calculateNextOccurrence, calculateNextRemindAt } from '../services/recurrence';
+import { createShareUrl, getOrCreateShareUrls } from './share';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -79,6 +80,7 @@ const fromSqliteUtc = (utcStr: string | null, timeZone: string = 'Asia/Shanghai'
 // GET /api/tasks - List tasks
 app.get('/', async (c) => {
   const userTimezone = (c.get as any)('userTimezone') || 'Asia/Shanghai';
+  const id = c.req.query('id');
   const q = c.req.query('q');
   const status = c.req.query('status');
   const tagId = c.req.query('tag');
@@ -103,6 +105,10 @@ app.get('/', async (c) => {
   `;
   const params: any[] = [];
 
+  if (id) {
+    query += ` AND t.id = ?`;
+    params.push(Number(id));
+  }
   if (q) {
     query += ` AND (t.title LIKE ? OR t.description LIKE ?)`;
     params.push(`%${q}%`, `%${q}%`);
@@ -150,6 +156,10 @@ app.get('/', async (c) => {
 
   const { results } = await c.env.DB.prepare(query).bind(...params).all();
 
+  // Get share URLs for all tasks
+  const taskIds = results.map(r => r.id as number);
+  const shareUrls = await getOrCreateShareUrls(c, taskIds);
+
   // Parse tags JSON string to array
   const formattedResults = results.map(row => ({
     ...row,
@@ -159,7 +169,8 @@ app.get('/', async (c) => {
     created_at: fromSqliteUtc(row.created_at as string, userTimezone),
     updated_at: fromSqliteUtc(row.updated_at as string, userTimezone),
     tags: row.tags ? JSON.parse(row.tags as string) : [],
-    metadata: row.metadata ? JSON.parse(row.metadata as string) : null
+    metadata: row.metadata ? JSON.parse(row.metadata as string) : null,
+    view_url: shareUrls[row.id as number] || null
   }));
 
   return c.json(response(true, formattedResults));
@@ -184,6 +195,8 @@ app.get('/:id', async (c) => {
   const result = await c.env.DB.prepare(query).bind(id).first();
   if (!result) return c.json(response(false, null, { code: 'NOT_FOUND', message: 'Task not found' }), 404);
 
+  const viewUrl = await createShareUrl(c, result.id as number);
+
   const formattedResult = {
     ...result,
     due_date: fromSqliteUtc(result.due_date as string, userTimezone),
@@ -192,7 +205,8 @@ app.get('/:id', async (c) => {
     created_at: fromSqliteUtc(result.created_at as string, userTimezone),
     updated_at: fromSqliteUtc(result.updated_at as string, userTimezone),
     tags: result.tags ? JSON.parse(result.tags as string) : [],
-    metadata: result.metadata ? JSON.parse(result.metadata as string) : null
+    metadata: result.metadata ? JSON.parse(result.metadata as string) : null,
+    view_url: viewUrl
   };
 
   return c.json(response(true, formattedResult));
@@ -266,7 +280,8 @@ app.post('/', async (c) => {
       }
     }
 
-    return c.json(response(true, { id: taskId }), 201);
+    const viewUrl = taskId ? await createShareUrl(c, taskId as number) : null;
+    return c.json(response(true, { id: taskId, view_url: viewUrl }), 201);
   } catch (err: any) {
     return c.json(response(false, null, { code: 'DB_ERROR', message: err.message }), 500);
   }
@@ -397,6 +412,7 @@ app.put('/:id', async (c) => {
       WHERE t.id = ?
     `;
     const updatedTask = await c.env.DB.prepare(updatedTaskQuery).bind(id).first();
+    const viewUrl = updatedTask ? await createShareUrl(c, updatedTask.id as number) : null;
     const formattedTask = {
       ...updatedTask,
       due_date: fromSqliteUtc(updatedTask?.due_date as string, userTimezone),
@@ -405,7 +421,8 @@ app.put('/:id', async (c) => {
       created_at: fromSqliteUtc(updatedTask?.created_at as string, userTimezone),
       updated_at: fromSqliteUtc(updatedTask?.updated_at as string, userTimezone),
       tags: updatedTask?.tags ? JSON.parse(updatedTask.tags as string) : [],
-      metadata: updatedTask?.metadata ? JSON.parse(updatedTask.metadata as string) : null
+      metadata: updatedTask?.metadata ? JSON.parse(updatedTask.metadata as string) : null,
+      view_url: viewUrl
     };
 
     return c.json(response(true, formattedTask));

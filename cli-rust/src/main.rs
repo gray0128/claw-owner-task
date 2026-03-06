@@ -34,6 +34,9 @@ enum Commands {
 
     /// List tasks
     List {
+        /// Filter by ID
+        #[arg(short, long)]
+        id: Option<String>,
         /// Search keyword
         #[arg(short = 'q', long = "query")]
         query: Option<String>,
@@ -356,6 +359,7 @@ fn main() {
 
         // --- List ---
         Commands::List {
+            id,
             query,
             status,
             priority,
@@ -365,6 +369,9 @@ fn main() {
             tag,
         } => {
             let mut params = Vec::new();
+            if let Some(v) = id {
+                params.push(format!("id={v}"));
+            }
             if let Some(v) = query {
                 params.push(format!("q={v}"));
             }
@@ -492,7 +499,11 @@ fn main() {
 
             let res = client.create_task(payload);
             if !format_output(json_mode, &res) {
-                println!("Task created with ID: {}", val_str(&res, "id"));
+                let task_id = val_str(&res, "id");
+                println!("Task created with ID: {task_id}");
+                if let Some(url) = res.get("view_url").and_then(|v| v.as_str()) {
+                    println!("View Online: {url}");
+                }
             }
         }
 
@@ -560,6 +571,9 @@ fn main() {
             let res = client.update_task(&id, payload);
             if !format_output(json_mode, &res) {
                 println!("Task {id} updated.");
+                if let Some(url) = res.get("view_url").and_then(|v| v.as_str()) {
+                    println!("View Online: {url}");
+                }
             }
         }
 
@@ -729,6 +743,7 @@ fn main() {
                     let rows: Vec<TaskRow> = tasks_to_show
                         .iter()
                         .map(|t| {
+                            // (tags processing ...)
                             let tags_str = t
                                 .get("tags")
                                 .and_then(|v| v.as_array())
@@ -765,8 +780,18 @@ fn main() {
                         })
                         .collect();
                     println!("{}", Table::new(rows));
+
+                    // Show URL if it's a single task or high priority result
+                    if tasks_to_show.len() == 1 {
+                        if let Some(url) = tasks_to_show[0].get("view_url").and_then(|v| v.as_str()) {
+                            println!("View Online: {url}");
+                        }
+                    }
                 } else if action == "create" {
                     println!("Task created successfully with ID: {}", val_str(data, "id"));
+                    if let Some(url) = data.get("view_url").and_then(|v| v.as_str()) {
+                        println!("View Online: {url}");
+                    }
                 } else {
                     let msg = data
                         .get("message")

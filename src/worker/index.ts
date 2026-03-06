@@ -12,6 +12,7 @@ import { remindHandlers } from './handlers/remind';
 import { logsHandlers } from './handlers/logs';
 import { telegramHandlers } from './handlers/telegram';
 import { authSummaryHandlers, publicSummaryHandlers } from './handlers/summary';
+import { publicShareHandlers } from './handlers/share';
 
 export type Bindings = {
   DB: D1Database;
@@ -45,6 +46,7 @@ app.route('/api/summary', authSummaryHandlers);
 
 // Public Routes (No Auth)
 app.route('/summary', publicSummaryHandlers);
+app.route('/share', publicShareHandlers);
 
 // Telegram Webhook is public and handles its own auth via Chat ID and Telegram Token
 app.route('/api/webhook/telegram', telegramHandlers);
@@ -81,7 +83,13 @@ export default {
         WHERE created_at <= datetime('now', '-30 days')
       `).run();
 
-      // 3. Automated Summary Generation via Cron
+      // 3. Clean up expired task shares
+      await env.DB.prepare(`
+        DELETE FROM task_shares
+        WHERE expires_at <= DATETIME('now')
+      `).run();
+
+      // 4. Automated Summary Generation via Cron
       // To use this, user sets CRON_SUMMARY_TIME="08:00,20:00" (in their USER_TIMEZONE) in wrangler.toml
       if (env.CRON_SUMMARY_TIME && env.ENABLE_AI !== 'false' && env.ENABLE_AI !== false) {
         const timeZone = env.USER_TIMEZONE || 'Asia/Shanghai';
