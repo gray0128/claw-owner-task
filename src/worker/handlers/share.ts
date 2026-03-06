@@ -54,8 +54,6 @@ export async function getOrCreateShareUrls(c: any, taskIds: number[]): Promise<R
 
 // Helper: Generate a unique share URL for a single task
 export async function createShareUrl(c: any, taskId: number): Promise<string> {
-...
-
   const uuid = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   const sqliteExpiresAt = expiresAt.toISOString().replace('T', ' ').split('.')[0];
