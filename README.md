@@ -124,6 +124,11 @@ curl -F "url=https://<your-worker-subdomain>.workers.dev/api/webhook/telegram" h
 ```
 配置完成后，机器人将仅接收来自 `TELEGRAM_CHAT_ID` 指定用户的指令，并实时回复 AI 处理结果。
 
+**支持的指令：**
+- **自然语言对话**：直接发送“帮我创建明天下午三点的会议”等内容，AI 将自动解析并处理。
+- **`/summary` (或 `/总结`)**：立即生成任务总结报告并推送到所有配置好的渠道。
+- **`/add <任务标题>` (或 `/添加`)**：快速创建一个任务，绕过 AI 解析以确保 100% 精确度（例如：`/add 买牛奶`）。
+
 ### 4. 部署到云端
 完成以上配置后，将 Worker 部署到您的 Cloudflare 账号：
 ```bash

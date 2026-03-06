@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { aiHandlers } from './ai';
+import { authSummaryHandlers } from './summary';
+import { taskHandlers } from './tasks';
 import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -77,6 +79,61 @@ app.post('/', async (c) => {
         try {
             // Use userTimezone from env or default
             const userTimezone = c.env.USER_TIMEZONE || 'Asia/Shanghai';
+
+            const trimmedText = userText.trim();
+            if (trimmedText === '/summary' || trimmedText === '/总结') {
+                await sendTelegramNotification(telegramToken, chatId, `⏳ <b>正在生成任务总结，请稍候...</b>`, 'HTML');
+                
+                // Directly call the summary generation handler
+                const summaryRes = await authSummaryHandlers.request('/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                        'X-User-Timezone': userTimezone
+                    }
+                }, c.env);
+
+                if (summaryRes.ok) {
+                    return c.text('OK');
+                } else {
+                    const errorText = await summaryRes.text();
+                    await sendTelegramNotification(telegramToken, chatId, `❌ <b>生成任务总结失败</b>\n<pre>${escapeTelegramHTML(errorText)}</pre>`, 'HTML');
+                    return c.text('OK');
+                }
+            } else if (trimmedText === '/add' || trimmedText === '/添加') {
+                await sendTelegramNotification(telegramToken, chatId, `ℹ️ <b>使用说明</b>\n请提供任务内容，例如：\n<pre>/add 买牛奶</pre>`, 'HTML');
+                return c.text('OK');
+            } else if (trimmedText.startsWith('/add ') || trimmedText.startsWith('/添加 ')) {
+                const title = trimmedText.replace(/^\/(add|添加)\s+/, '').trim();
+                if (!title) {
+                    await sendTelegramNotification(telegramToken, chatId, `ℹ️ <b>使用说明</b>\n请提供任务内容，例如：\n<pre>/add 买牛奶</pre>`, 'HTML');
+                    return c.text('OK');
+                }
+
+                // Directly call the task creation handler, bypassing AI
+                const addRes = await taskHandlers.request('/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                        'X-User-Timezone': userTimezone
+                    },
+                    body: JSON.stringify({ title, source: 'telegram' })
+                }, c.env);
+
+                if (addRes.ok) {
+                    const addData: any = await addRes.json();
+                    if (addData.success) {
+                        await sendTelegramNotification(telegramToken, chatId, `✅ <b>任务添加成功</b>\n\n任务: <b>${escapeTelegramHTML(title)}</b>\nTask ID: ${addData.data.id}`, 'HTML');
+                    } else {
+                        await sendTelegramNotification(telegramToken, chatId, `❌ <b>添加失败</b>\n<pre>${escapeTelegramHTML(addData.error?.message || '未知错误')}</pre>`, 'HTML');
+                    }
+                } else {
+                    const errorText = await addRes.text();
+                    await sendTelegramNotification(telegramToken, chatId, `❌ <b>添加失败</b>\n<pre>${escapeTelegramHTML(errorText)}</pre>`, 'HTML');
+                }
+                return c.text('OK');
+            }
 
             const aiRes = await aiHandlers.request('/', {
                 method: 'POST',
