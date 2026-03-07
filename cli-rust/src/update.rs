@@ -29,10 +29,25 @@ pub fn check_update_info(json_mode: bool) {
     if let Ok(content) = fs::read_to_string(&info_file) {
         let tag = content.trim();
         if !tag.is_empty() {
-            println!(
-                "\n💡 发现新版本 {}！运行 \"claw-task upgrade\" 即可自动升级。",
-                tag
-            );
+            let latest_ver_str = tag.trim_start_matches('v');
+            if let (Ok(current_ver), Ok(latest_ver)) = (
+                Version::parse(env!("CARGO_PKG_VERSION")),
+                Version::parse(latest_ver_str),
+            ) {
+                if latest_ver > current_ver {
+                    println!(
+                        "\n💡 发现新版本 {}！运行 \"claw-task upgrade\" 即可自动升级。",
+                        tag
+                    );
+                } else {
+                    let _ = fs::remove_file(info_file);
+                }
+            } else {
+                println!(
+                    "\n💡 发现新版本 {}！运行 \"claw-task upgrade\" 即可自动升级。",
+                    tag
+                );
+            }
         }
     }
 }
