@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
 import { getQQAccessToken, sendQQNotification } from '../services/qqbot';
+import { getTenantAccessToken, sendFeishuMessage } from '../services/feishu';
 
 // Helper to format response
 const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
@@ -309,6 +310,24 @@ authSummaryHandlers.post('/', async (c) => {
       }
     } catch(e) {
       console.error("QQ push failed", e);
+    }
+  }
+
+  if (c.env.FEISHU_APP_ID && c.env.FEISHU_APP_SECRET && c.env.FEISHU_ALLOWED_CHAT_ID) {
+    try {
+      const tenantAccessToken = await getTenantAccessToken(c.env.FEISHU_APP_ID, c.env.FEISHU_APP_SECRET);
+      if (tenantAccessToken) {
+        const firstChatId = c.env.FEISHU_ALLOWED_CHAT_ID.split(',')[0].trim();
+        const msg = `📊 AI 任务总结已生成\n\n点击查看详细总结网页：\n${summaryUrl}`;
+        // Since we don't know if the allowed ID is a user or group, we can just attempt both or default to chat_id
+        // (usually chat_id fails if it's an open_id, and vice versa)
+        let res = await sendFeishuMessage(tenantAccessToken, firstChatId, msg, 'chat_id', 'text');
+        if (!res.success) {
+            await sendFeishuMessage(tenantAccessToken, firstChatId, msg, 'open_id', 'text');
+        }
+      }
+    } catch(e) {
+      console.error("Feishu push failed", e);
     }
   }
 
