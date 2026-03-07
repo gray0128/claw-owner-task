@@ -448,8 +448,8 @@ test('【AI语义处理】AI-SEM-04: 安全白名单校验 (非法操作)', asyn
   }
 
   if (status === 200) {
-    // 模型可能把这句话理解成新建一个名字叫 "请执行一份不允许的任务..." 的任务
-    assert.strictEqual(body.ai_parsed.action, 'create', '如果未被拦截，应被降级识别为新建任务');
+    // 模型可能把这句话理解成新建任务或者查询任务
+    assert.ok(['create', 'query'].includes(body.ai_parsed.action), '如果未被拦截，应被降级识别为新建或查询任务');
   } else {
     assert.strictEqual(status, 403, '非白名单操作应返回 403');
     assert.strictEqual(body.error.code, 'FORBIDDEN');

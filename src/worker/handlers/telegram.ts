@@ -4,11 +4,13 @@ import { aiHandlers } from './ai';
 import { authSummaryHandlers } from './summary';
 import { taskHandlers } from './tasks';
 import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
+import { createListUrl } from './list';
+import { createShareUrl } from './share';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Helper to format AI response for Telegram HTML mode
-function formatTelegramResponse(aiResult: any): string {
+async function formatTelegramResponse(c: any, aiResult: any): Promise<string> {
     if (!aiResult.success) {
         const errMsg = aiResult.error?.message || JSON.stringify(aiResult.error);
         return `❌ <b>操作失败</b>\n<pre>${escapeTelegramHTML(errMsg)}</pre>`;
@@ -17,20 +19,29 @@ function formatTelegramResponse(aiResult: any): string {
     const { ai_parsed, data } = aiResult;
     let text = `✅ <b>操作成功</b>\n\n`;
 
+    let intentStr = '任务列表';
     if (ai_parsed && ai_parsed.action) {
-        text += `<i>解析动作: ${escapeTelegramHTML(ai_parsed.action)}</i>\n`;
+        intentStr = `解析动作: ${ai_parsed.action}`;
+        text += `<i>${escapeTelegramHTML(intentStr)}</i>\n`;
     }
 
     if (data && Array.isArray(data)) {
         if (data.length === 0) {
             text += `\n没有找到符合条件的任务。`;
+        } else if (data.length === 1) {
+            text += `\n成功查询到 1 个任务。\n`;
+            let url = data[0].view_url;
+            if (!url && data[0].id) {
+                url = await createShareUrl(c, data[0].id);
+            }
+            if (url) {
+                text += `${escapeTelegramHTML(url)}`;
+            } else {
+                text += `- <b>${escapeTelegramHTML(data[0].title)}</b> [${data[0].status === 'completed' ? '已完成' : '待办'}]`;
+            }
         } else {
-            text += `\n找到 ${data.length} 个任务:\n`;
-            data.forEach(t => {
-                text += `\n- <b>${escapeTelegramHTML(t.title)}</b> [${t.status === 'completed' ? '已完成' : '待办'}]`;
-                if (t.due_date) text += `\n  📅 截止: ${escapeTelegramHTML(t.due_date)}`;
-                if (t.remind_at) text += `\n  ⏰ 提醒: ${escapeTelegramHTML(t.remind_at)}`;
-            });
+            const listUrl = await createListUrl(c, data, intentStr);
+            text += `\n成功查询到 ${data.length} 个任务。\n${escapeTelegramHTML(listUrl)}`;
         }
     } else if (data && typeof data === 'object') {
         if (data.title) text += `\n任务: <b>${escapeTelegramHTML(data.title)}</b>`;
@@ -38,6 +49,7 @@ function formatTelegramResponse(aiResult: any): string {
         if (data.message) text += `\n${escapeTelegramHTML(data.message)}`;
         if (data.due_date) text += `\n📅 截止: ${escapeTelegramHTML(data.due_date)}`;
         if (data.remind_at) text += `\n⏰ 提醒: ${escapeTelegramHTML(data.remind_at)}`;
+        if (data.view_url) text += `\n\n${escapeTelegramHTML(data.view_url)}`;
     } else if (data) {
         text += `\n结果: ${escapeTelegramHTML(String(data))}`;
     }
@@ -186,7 +198,7 @@ app.post('/', async (c) => {
                 aiResult = { success: false, error: { message: 'AI Handler returned invalid JSON' } };
             }
 
-            const replyText = formatTelegramResponse(aiResult);
+            const replyText = await formatTelegramResponse(c, aiResult);
             await sendTelegramNotification(telegramToken, chatId, replyText, 'HTML');
 
         } catch (e: any) {

@@ -23,7 +23,6 @@ export async function sendTelegramNotification(
         chat_id: chatId,
         text: text,
         parse_mode: parseMode,
-        disable_web_page_preview: true,
     };
 
     try {
