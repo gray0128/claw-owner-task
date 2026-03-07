@@ -168,92 +168,97 @@ app.post('/', async (c) => {
             }
 
             if (cmdName === 'summary' || cmdName === '总结') {
-                await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在生成任务总结，请稍候...', receiveIdType, 'text');
-                
-                try {
-                    const publicUrl = new URL(c.req.url);
-                    const publicHost = publicUrl.host;
-                    const publicProto = publicUrl.protocol.replace(':', '');
+                const publicUrl = new URL(c.req.url);
+                const publicHost = publicUrl.host;
+                const publicProto = publicUrl.protocol.replace(':', '');
 
-                    const summaryRes = await authSummaryHandlers.request('/?source=feishu', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
-                            'X-User-Timezone': userTimezone,
-                            'X-Forwarded-Host': publicHost,
-                            'X-Forwarded-Proto': publicProto
+                c.executionCtx.waitUntil((async () => {
+                    await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在生成任务总结，请稍候...', receiveIdType, 'text');
+                    try {
+                        const summaryRes = await authSummaryHandlers.request('/?source=feishu', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                                'X-User-Timezone': userTimezone,
+                                'X-Forwarded-Host': publicHost,
+                                'X-Forwarded-Proto': publicProto
+                            }
+                        }, c.env);
+
+                        if (!summaryRes.ok) {
+                            const errorData = await summaryRes.json() as any;
+                            const errorMsg = errorData.error?.message || await summaryRes.text();
+                            await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 生成任务总结失败\n${errorMsg}`, receiveIdType, 'text');
                         }
-                    }, c.env);
-
-                    if (!summaryRes.ok) {
-                        const errorData = await summaryRes.json() as any;
-                        const errorMsg = errorData.error?.message || await summaryRes.text();
-                        await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 生成任务总结失败\n${errorMsg}`, receiveIdType, 'text');
+                    } catch (err: any) {
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令执行崩溃 (Summary)\n${err.message}`, receiveIdType, 'text');
                     }
-                } catch (err: any) {
-                    await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令执行崩溃 (Summary)\n${err.message}`, receiveIdType, 'text');
-                }
+                })());
                 return c.json({code: 0});
             } else if (cmdName === 'add' || cmdName === '添加') {
                 if (!cmdArgs || !cmdArgs.trim()) {
-                    await sendFeishuMessage(tenantAccessToken, receiveId, `ℹ️ 使用说明\n请提供任务内容，例如：\n/add 买牛奶`, receiveIdType, 'text');
+                    c.executionCtx.waitUntil(sendFeishuMessage(tenantAccessToken, receiveId, `ℹ️ 使用说明\n请提供任务内容，例如：\n/add 买牛奶`, receiveIdType, 'text'));
                     return c.json({code: 0});
                 }
 
                 const title = cmdArgs.trim();
-                try {
-                    const addRes = await taskHandlers.request('/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
-                            'X-User-Timezone': userTimezone
-                        },
-                        body: JSON.stringify({ title, source: 'feishu' })
-                    }, c.env);
+                c.executionCtx.waitUntil((async () => {
+                    try {
+                        const addRes = await taskHandlers.request('/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                                'X-User-Timezone': userTimezone
+                            },
+                            body: JSON.stringify({ title, source: 'feishu' })
+                        }, c.env);
 
-                    if (addRes.ok) {
-                        const addData: any = await addRes.json();
-                        if (addData.success) {
-                            await sendFeishuMessage(tenantAccessToken, receiveId, `✅ 任务添加成功\n\n任务: ${title}\nTask ID: ${addData.data.id}`, receiveIdType, 'text');
+                        if (addRes.ok) {
+                            const addData: any = await addRes.json();
+                            if (addData.success) {
+                                await sendFeishuMessage(tenantAccessToken, receiveId, `✅ 任务添加成功\n\n任务: ${title}\nTask ID: ${addData.data.id}`, receiveIdType, 'text');
+                            } else {
+                                await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 添加失败\n${addData.error?.message || '未知错误'}`, receiveIdType, 'text');
+                            }
                         } else {
-                            await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 添加失败\n${addData.error?.message || '未知错误'}`, receiveIdType, 'text');
+                            const errorText = await addRes.text();
+                            await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 添加失败\n${errorText}`, receiveIdType, 'text');
                         }
-                    } else {
-                        const errorText = await addRes.text();
-                        await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 添加失败\n${errorText}`, receiveIdType, 'text');
+                    } catch (err: any) {
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令错误 (Add)\n${err.message}`, receiveIdType, 'text');
                     }
-                } catch (err: any) {
-                    await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令错误 (Add)\n${err.message}`, receiveIdType, 'text');
-                }
+                })());
                 return c.json({code: 0});
             }
 
             // AI Flow
-            try {
-                const aiRes = await aiHandlers.request('/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-User-Timezone': userTimezone
-                    },
-                    body: JSON.stringify({ text: trimmedText })
-                }, c.env);
-
-                let aiResult: any;
+            c.executionCtx.waitUntil((async () => {
                 try {
-                    aiResult = await aiRes.json();
-                } catch (e) {
-                    aiResult = { success: false, error: { message: 'AI Handler returned invalid JSON' } };
+                    const aiRes = await aiHandlers.request('/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-User-Timezone': userTimezone
+                        },
+                        body: JSON.stringify({ text: trimmedText })
+                    }, c.env);
+
+                    let aiResult: any;
+                    try {
+                        aiResult = await aiRes.json();
+                    } catch (e) {
+                        aiResult = { success: false, error: { message: 'AI Handler returned invalid JSON' } };
+                    }
+
+                    const replyText = await formatFeishuResponse(c, aiResult);
+                    await sendFeishuMessage(tenantAccessToken, receiveId, replyText, receiveIdType, 'text');
+
+                } catch (e: any) {
+                    console.error('[Feishu Webhook] Error processing AI request:', e);
+                    await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 系统错误\n${e.message}`, receiveIdType, 'text');
                 }
-
-                const replyText = await formatFeishuResponse(c, aiResult);
-                await sendFeishuMessage(tenantAccessToken, receiveId, replyText, receiveIdType, 'text');
-
-            } catch (e: any) {
-                console.error('[Feishu Webhook] Error processing AI request:', e);
-                await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 系统错误\n${e.message}`, receiveIdType, 'text');
-            }
+            })());
         }
     }
 

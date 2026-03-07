@@ -110,96 +110,102 @@ app.post('/', async (c) => {
             const cmdArgs = commandMatch ? commandMatch[2] : null;
 
             if (cmdName === 'summary' || cmdName === '总结') {
-                await sendTelegramNotification(telegramToken, chatId, `⏳ <b>正在生成任务总结，请稍候...</b>`, 'HTML');
-                
-                try {
-                    // Extract public base info from the incoming request
-                    const publicUrl = new URL(c.req.url);
-                    const publicHost = publicUrl.host;
-                    const publicProto = publicUrl.protocol.replace(':', '');
+                const publicUrl = new URL(c.req.url);
+                const publicHost = publicUrl.host;
+                const publicProto = publicUrl.protocol.replace(':', '');
 
-                    // Directly call the summary generation handler
-                    const summaryRes = await authSummaryHandlers.request('/?source=telegram', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
-                            'X-User-Timezone': userTimezone,
-                            'X-Forwarded-Host': publicHost,
-                            'X-Forwarded-Proto': publicProto
+                c.executionCtx.waitUntil((async () => {
+                    await sendTelegramNotification(telegramToken, chatId, `⏳ <b>正在生成任务总结，请稍候...</b>`, 'HTML');
+                    try {
+                        // Directly call the summary generation handler
+                        const summaryRes = await authSummaryHandlers.request('/?source=telegram', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                                'X-User-Timezone': userTimezone,
+                                'X-Forwarded-Host': publicHost,
+                                'X-Forwarded-Proto': publicProto
+                            }
+                        }, c.env);
+
+                        if (!summaryRes.ok) {
+                            const errorData = await summaryRes.json() as any;
+                            const errorMsg = errorData.error?.message || await summaryRes.text();
+                            console.error('[Telegram] Summary command failed:', errorMsg);
+                            await sendTelegramNotification(telegramToken, chatId, `❌ <b>生成任务总结失败</b>\n<pre>${escapeTelegramHTML(errorMsg)}</pre>`, 'HTML');
                         }
-                    }, c.env);
-
-                    if (summaryRes.ok) {
-                        // The summary handler will send its own notification upon success
-                        return c.text('OK');
-                    } else {
-                        const errorData = await summaryRes.json() as any;
-                        const errorMsg = errorData.error?.message || await summaryRes.text();
-                        console.error('[Telegram] Summary command failed:', errorMsg);
-                        await sendTelegramNotification(telegramToken, chatId, `❌ <b>生成任务总结失败</b>\n<pre>${escapeTelegramHTML(errorMsg)}</pre>`, 'HTML');
-                        return c.text('OK');
+                    } catch (err: any) {
+                        console.error('[Telegram] Summary command exception:', err);
+                        await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令执行崩溃 (Summary)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
                     }
-                } catch (err: any) {
-                    console.error('[Telegram] Summary command exception:', err);
-                    await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令执行崩溃 (Summary)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
-                    return c.text('OK');
-                }
+                })());
+                return c.text('OK');
             } else if (cmdName === 'add' || cmdName === '添加') {
                 if (!cmdArgs || !cmdArgs.trim()) {
-                    await sendTelegramNotification(telegramToken, chatId, `ℹ️ <b>使用说明</b>\n请提供任务内容，例如：\n<pre>/add 买牛奶</pre>`, 'HTML');
+                    c.executionCtx.waitUntil(sendTelegramNotification(telegramToken, chatId, `ℹ️ <b>使用说明</b>\n请提供任务内容，例如：\n<pre>/add 买牛奶</pre>`, 'HTML'));
                     return c.text('OK');
                 }
 
                 const title = cmdArgs.trim();
-                try {
-                    // Directly call the task creation handler, bypassing AI
-                    const addRes = await taskHandlers.request('/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
-                            'X-User-Timezone': userTimezone
-                        },
-                        body: JSON.stringify({ title, source: 'telegram' })
-                    }, c.env);
+                c.executionCtx.waitUntil((async () => {
+                    try {
+                        // Directly call the task creation handler, bypassing AI
+                        const addRes = await taskHandlers.request('/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                                'X-User-Timezone': userTimezone
+                            },
+                            body: JSON.stringify({ title, source: 'telegram' })
+                        }, c.env);
 
-                    if (addRes.ok) {
-                        const addData: any = await addRes.json();
-                        if (addData.success) {
-                            await sendTelegramNotification(telegramToken, chatId, `✅ <b>任务添加成功</b>\n\n任务: <b>${escapeTelegramHTML(title)}</b>\nTask ID: ${addData.data.id}`, 'HTML');
+                        if (addRes.ok) {
+                            const addData: any = await addRes.json();
+                            if (addData.success) {
+                                await sendTelegramNotification(telegramToken, chatId, `✅ <b>任务添加成功</b>\n\n任务: <b>${escapeTelegramHTML(title)}</b>\nTask ID: ${addData.data.id}`, 'HTML');
+                            } else {
+                                await sendTelegramNotification(telegramToken, chatId, `❌ <b>添加失败</b>\n<pre>${escapeTelegramHTML(addData.error?.message || '未知错误')}</pre>`, 'HTML');
+                            }
                         } else {
-                            await sendTelegramNotification(telegramToken, chatId, `❌ <b>添加失败</b>\n<pre>${escapeTelegramHTML(addData.error?.message || '未知错误')}</pre>`, 'HTML');
+                            const errorText = await addRes.text();
+                            console.error('[Telegram] Add command failed:', errorText);
+                            await sendTelegramNotification(telegramToken, chatId, `❌ <b>添加失败</b>\n<pre>${escapeTelegramHTML(errorText)}</pre>`, 'HTML');
                         }
-                    } else {
-                        const errorText = await addRes.text();
-                        console.error('[Telegram] Add command failed:', errorText);
-                        await sendTelegramNotification(telegramToken, chatId, `❌ <b>添加失败</b>\n<pre>${escapeTelegramHTML(errorText)}</pre>`, 'HTML');
+                    } catch (err: any) {
+                        console.error('[Telegram] Add command exception:', err);
+                        await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令错误 (Add)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
                     }
-                } catch (err: any) {
-                    console.error('[Telegram] Add command exception:', err);
-                    await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令错误 (Add)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
-                }
+                })());
                 return c.text('OK');
             }
 
-            const aiRes = await aiHandlers.request('/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-Timezone': userTimezone
-                },
-                body: JSON.stringify({ text: userText })
-            }, c.env);
+            c.executionCtx.waitUntil((async () => {
+                try {
+                    const aiRes = await aiHandlers.request('/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-User-Timezone': userTimezone
+                        },
+                        body: JSON.stringify({ text: userText })
+                    }, c.env);
 
-            let aiResult: any;
-            try {
-                aiResult = await aiRes.json();
-            } catch (e) {
-                aiResult = { success: false, error: { message: 'AI Handler returned invalid JSON' } };
-            }
+                    let aiResult: any;
+                    try {
+                        aiResult = await aiRes.json();
+                    } catch (e) {
+                        aiResult = { success: false, error: { message: 'AI Handler returned invalid JSON' } };
+                    }
 
-            const replyText = await formatTelegramResponse(c, aiResult);
-            await sendTelegramNotification(telegramToken, chatId, replyText, 'HTML');
+                    const replyText = await formatTelegramResponse(c, aiResult);
+                    await sendTelegramNotification(telegramToken, chatId, replyText, 'HTML');
+
+                } catch (e: any) {
+                    console.error('[Telegram Webhook] Error processing AI request:', e);
+                    await sendTelegramNotification(telegramToken, chatId, `❌ <b>系统错误</b>\n<pre>${escapeTelegramHTML(e.message)}</pre>`, 'HTML');
+                }
+            })());
 
         } catch (e: any) {
             console.error('[Telegram Webhook] Error processing AI request:', e);
