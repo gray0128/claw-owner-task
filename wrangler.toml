@@ -15,6 +15,11 @@ USER_TIMEZONE = "Asia/Shanghai"
 ENABLE_AI = true
 CRON_SUMMARY_TIME = "09:00,21:00" # 定时总结时间点，多个用逗号分隔 (HH:mm)
 
+# QQ Bot Configuration (Fill in your values)
+# QQ_APP_ID = "YOUR_APP_ID"
+# QQ_APP_SECRET = "YOUR_APP_SECRET"
+# QQ_ALLOWED_OPENID = "YOUR_OPENID"
+
 [ai]
 binding = "AI"
 

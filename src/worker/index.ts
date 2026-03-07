@@ -11,6 +11,7 @@ import { tagHandlers } from './handlers/tags';
 import { remindHandlers } from './handlers/remind';
 import { logsHandlers } from './handlers/logs';
 import { telegramHandlers } from './handlers/telegram';
+import { qqHandlers } from './handlers/qqbot';
 import { authSummaryHandlers, publicSummaryHandlers } from './handlers/summary';
 import { publicShareHandlers } from './handlers/share';
 
@@ -24,6 +25,9 @@ export type Bindings = {
   BARK_URL?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
+  QQ_APP_ID?: string;
+  QQ_APP_SECRET?: string;
+  QQ_ALLOWED_OPENID?: string;
   CRON_SUMMARY_TIME?: string; // Format: "HH:mm" in user timezone
 };
 
@@ -50,6 +54,9 @@ app.route('/share', publicShareHandlers);
 
 // Telegram Webhook is public and handles its own auth via Chat ID and Telegram Token
 app.route('/api/webhook/telegram', telegramHandlers);
+
+// QQ Bot Webhook
+app.route('/api/webhook/qq', qqHandlers);
 
 // Root fallback
 app.get('/', (c) => c.text('Claw Owner Task API is running.'));

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
+import { getQQAccessToken, sendQQNotification } from '../services/qqbot';
 
 // Helper to format response
 const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
@@ -296,6 +297,18 @@ authSummaryHandlers.post('/', async (c) => {
       await sendTelegramNotification(c.env.TELEGRAM_BOT_TOKEN, c.env.TELEGRAM_CHAT_ID, msg, 'HTML');
     } catch(e) {
       console.error("Telegram push failed", e);
+    }
+  }
+
+  if (c.env.QQ_APP_ID && c.env.QQ_APP_SECRET && c.env.QQ_ALLOWED_OPENID) {
+    try {
+      const accessToken = await getQQAccessToken(c.env.QQ_APP_ID, c.env.QQ_APP_SECRET);
+      if (accessToken) {
+        const msg = `📊 AI 任务总结已生成\n\n点击查看详细总结网页：\n${summaryUrl}`;
+        await sendQQNotification(accessToken, c.env.QQ_ALLOWED_OPENID, msg);
+      }
+    } catch(e) {
+      console.error("QQ push failed", e);
     }
   }
 
