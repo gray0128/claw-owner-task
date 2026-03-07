@@ -181,6 +181,7 @@ app.post('/', async (c) => {
                 return c.text('OK');
             }
 
+            const startTime = Date.now();
             c.executionCtx.waitUntil((async () => {
                 try {
                     const aiRes = await aiHandlers.request('/', {
@@ -200,6 +201,11 @@ app.post('/', async (c) => {
                     }
 
                     const replyText = await formatTelegramResponse(c, aiResult);
+                    const elapsed = Date.now() - startTime;
+                    if (elapsed > 60000) {
+                        console.warn(`[Telegram Webhook] AI response expired due to Isolate suspension (${elapsed}ms). Dropping message.`);
+                        return;
+                    }
                     const sendResult = await sendTelegramNotification(telegramToken, chatId, replyText, 'HTML');
                     if (!sendResult.success) {
                         console.error('[Telegram Webhook] Failed to send formatted response:', JSON.stringify(sendResult.error));

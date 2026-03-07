@@ -175,6 +175,7 @@ app.post('/', async (c) => {
                     }
 
                     // Pass to AI
+                    const startTime = Date.now();
                     const aiRes = await aiHandlers.request('/', {
                         method: 'POST',
                         headers: {
@@ -186,6 +187,11 @@ app.post('/', async (c) => {
 
                     const aiResult = await aiRes.json() as any;
                     const replyText = formatQQResponse(aiResult);
+                    const elapsed = Date.now() - startTime;
+                    if (elapsed > 60000) {
+                        console.warn(`[QQBot Webhook] AI response expired due to Isolate suspension (${elapsed}ms). Dropping message.`);
+                        return;
+                    }
                     await sendQQNotification(token, openid, replyText, msgId);
 
                 } catch (err: any) {

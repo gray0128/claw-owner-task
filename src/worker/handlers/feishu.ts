@@ -258,6 +258,7 @@ app.post('/', async (c) => {
             }
 
             // AI Flow
+            const startTime = Date.now();
             c.executionCtx.waitUntil((async () => {
                 try {
                     const aiRes = await aiHandlers.request('/', {
@@ -277,6 +278,11 @@ app.post('/', async (c) => {
                     }
 
                     const replyText = await formatFeishuResponse(c, aiResult);
+                    const elapsed = Date.now() - startTime;
+                    if (elapsed > 60000) {
+                        console.warn(`[Feishu Webhook] AI response expired due to Isolate suspension (${elapsed}ms). Dropping message.`);
+                        return;
+                    }
                     await sendFeishuMessage(tenantAccessToken, receiveId, replyText, receiveIdType, 'text');
 
                 } catch (e: any) {
