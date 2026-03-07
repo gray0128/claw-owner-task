@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { html } from "hono/html";
 import { Bindings } from "../index";
+import { getAppBaseUrl } from "../utils";
 
 export const publicListHandlers = new Hono<{ Bindings: Bindings }>();
 
@@ -28,19 +29,7 @@ export async function createListUrl(
     .bind(uuid, tasksJson, intent, sqliteExpiresAt)
     .run();
 
-  const requestUrl = new URL(c.req.url);
-  let baseUrl;
-  if (c.env.BASE_URL) {
-    const base = c.env.BASE_URL.endsWith("/")
-      ? c.env.BASE_URL.slice(0, -1)
-      : c.env.BASE_URL;
-    baseUrl = `${base}/list/`;
-  } else {
-    const host = c.req.header("x-forwarded-host") || requestUrl.host;
-    const protocol =
-      c.req.header("x-forwarded-proto") || requestUrl.protocol.replace(":", "");
-    baseUrl = `${protocol}://${host}/list/`;
-  }
+  const baseUrl = `${getAppBaseUrl(c)}/list/`;
   return `${baseUrl}${uuid}`;
 }
 
@@ -161,7 +150,7 @@ publicListHandlers.get("/:uuid", async (c) => {
                     <div class="task-title-wrap status-${task.status}">
                       <span class="status-dot" title="${task.status === 'completed' ? '已完成' : '待处理'}"></span>
                       <div>
-                        <h2 class="task-title">${task.title}</h2>
+                        <h2 class="task-title">#${task.id} ${task.title}</h2>
                         ${task.description ? html`<div class="task-desc">${task.description}</div>` : ""}
                         
                         <div class="task-badges">
@@ -174,6 +163,7 @@ publicListHandlers.get("/:uuid", async (c) => {
                   </div>
                   
                   <div class="task-meta">
+                    ${task.created_at ? html`<div class="meta-item"><span>创建:</span> <strong>${new Date(task.created_at + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
                     ${task.due_date ? html`<div class="meta-item"><span>截止:</span> <strong>${new Date(task.due_date + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
                     ${task.remind_at ? html`<div class="meta-item"><span>提醒:</span> <strong>${new Date(task.remind_at + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
                   </div>

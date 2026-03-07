@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { html } from "hono/html";
 import { Bindings } from "../index";
+import { getAppBaseUrl } from "../utils";
 
 export const publicShareHandlers = new Hono<{ Bindings: Bindings }>();
 // Helper: Get or create share URLs for a list of tasks
@@ -11,20 +12,7 @@ export async function getOrCreateShareUrls(
   if (taskIds.length === 0) return {};
 
   const now = new Date().toISOString().replace("T", " ").split(".")[0];
-  const requestUrl = new URL(c.req.url);
-
-  let baseUrl;
-  if (c.env.BASE_URL) {
-    const base = c.env.BASE_URL.endsWith("/")
-      ? c.env.BASE_URL.slice(0, -1)
-      : c.env.BASE_URL;
-    baseUrl = `${base}/share/`;
-  } else {
-    const host = c.req.header("x-forwarded-host") || requestUrl.host;
-    const protocol =
-      c.req.header("x-forwarded-proto") || requestUrl.protocol.replace(":", "");
-    baseUrl = `${protocol}://${host}/share/`;
-  }
+  const baseUrl = `${getAppBaseUrl(c)}/share/`;
 
   // 1. Check for existing valid shares
   const placeholders = taskIds.map(() => "?").join(",");
@@ -94,19 +82,7 @@ export async function createShareUrl(c: any, taskId: number): Promise<string> {
     .bind(uuid, taskId, sqliteExpiresAt)
     .run();
 
-  const requestUrl = new URL(c.req.url);
-  let baseUrl;
-  if (c.env.BASE_URL) {
-    const base = c.env.BASE_URL.endsWith("/")
-      ? c.env.BASE_URL.slice(0, -1)
-      : c.env.BASE_URL;
-    baseUrl = `${base}/share/`;
-  } else {
-    const host = c.req.header("x-forwarded-host") || requestUrl.host;
-    const protocol =
-      c.req.header("x-forwarded-proto") || requestUrl.protocol.replace(":", "");
-    baseUrl = `${protocol}://${host}/share/`;
-  }
+  const baseUrl = `${getAppBaseUrl(c)}/share/`;
   return `${baseUrl}${uuid}`;
 }
 
@@ -246,6 +222,14 @@ publicShareHandlers.get("/:uuid", async (c) => {
               ${task.description ? html`<div class="description">${task.description}</div>` : ""}
               
               <div class="meta-section">
+                <div class="meta-item">
+                  <span class="meta-label">任务ID / Task ID</span>
+                  <span class="meta-value">#${task.id}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">创建时间 / Created At</span>
+                  <span class="meta-value">${new Date(task.created_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
+                </div>
                 <div class="meta-item">
                   <span class="meta-label">优先级 / Priority</span>
                   <span class="meta-value priority-${task.priority}">${task.priority.toUpperCase()}</span>

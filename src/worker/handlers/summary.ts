@@ -3,6 +3,7 @@ import { Bindings } from '../index';
 import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
 import { getQQAccessToken, sendQQNotification } from '../services/qqbot';
 import { getTenantAccessToken, sendFeishuMessage } from '../services/feishu';
+import { getAppBaseUrl } from '../utils';
 
 // Helper to format response
 const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
@@ -169,7 +170,7 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
             <ul class="task-list">
               ${summaryData.core_tasks.map((t: any) => `
                 <li class="task-item">
-                  <div class="task-title">${t.title}</div>
+                  <div class="task-title">[#${t.id}] ${t.title} <span style="font-size: 12px; color: #a3a3a3; font-weight: normal; margin-left: 8px;">${t.created_at ? new Date(t.created_at + "Z").toLocaleString('zh-CN', { hour12: false }) : ''}</span></div>
                   ${t.reason ? `<p class="task-desc">${t.reason}</p>` : ''}
                 </li>
               `).join('')}
@@ -182,7 +183,7 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
             <ul class="task-list">
               ${summaryData.warnings.map((w: any) => `
                 <li class="task-item warning">
-                  <div class="task-title">${w.title}</div>
+                  <div class="task-title">[#${w.id}] ${w.title} <span style="font-size: 12px; color: #a3a3a3; font-weight: normal; margin-left: 8px;">${w.created_at ? new Date(w.created_at + "Z").toLocaleString('zh-CN', { hour12: false }) : ''}</span></div>
                   <p class="task-desc">${w.suggestion}</p>
                 </li>
               `).join('')}
@@ -213,7 +214,7 @@ authSummaryHandlers.post('/', async (c) => {
 
   // Fetch pending and in_progress tasks
   const query = `
-    SELECT t.id, t.title, t.description, t.priority, t.due_date, t.remind_at, t.status, c.name as category_name,
+    SELECT t.id, t.title, t.description, t.priority, t.due_date, t.remind_at, t.status, t.created_at, c.name as category_name,
     (
       SELECT json_group_array(tg.name)
       FROM task_tags tt JOIN tags tg ON tt.tag_id = tg.id
@@ -234,6 +235,7 @@ authSummaryHandlers.post('/', async (c) => {
     title: t.title,
     priority: t.priority,
     due_date: t.due_date,
+    created_at: t.created_at,
     status: t.status,
     category: t.category_name,
     tags: t.tags ? JSON.parse(t.tags as string) : []
@@ -251,10 +253,10 @@ authSummaryHandlers.post('/', async (c) => {
     "overdue": 1
   },
   "core_tasks": [
-    { "title": "任务名称", "reason": "为什么这是核心必做" }
+    { "id": 123, "title": "任务名称", "created_at": "YYYY-MM-DD HH:mm:ss", "reason": "为什么这是核心必做" }
   ],
   "warnings": [
-    { "title": "拖延/风险任务名称", "suggestion": "改善建议" }
+    { "id": 124, "title": "拖延/风险任务名称", "created_at": "YYYY-MM-DD HH:mm:ss", "suggestion": "改善建议" }
   ],
   "overall_assessment": "对当前任务负载的总体评价和行动建议（约 50-100 字）。"
 }
@@ -304,17 +306,7 @@ authSummaryHandlers.post('/', async (c) => {
     VALUES (?, ?, datetime('now', '+24 hours'))
   `).bind(uuid, JSON.stringify(summaryObj)).run();
 
-  const requestUrl = new URL(c.req.url);
-  // Determine public base URL: 1. env.BASE_URL, 2. X-Forwarded-Host header, 3. request.url host
-  let summaryUrl;
-  if (c.env.BASE_URL) {
-    const base = c.env.BASE_URL.endsWith('/') ? c.env.BASE_URL.slice(0, -1) : c.env.BASE_URL;
-    summaryUrl = `${base}/summary/${uuid}`;
-  } else {
-    const host = c.req.header('x-forwarded-host') || requestUrl.host;
-    const protocol = c.req.header('x-forwarded-proto') || requestUrl.protocol.replace(':', '');
-    summaryUrl = `${protocol}://${host}/summary/${uuid}`;
-  }
+  const summaryUrl = `${getAppBaseUrl(c)}/summary/${uuid}`;
   
   const source = c.req.query('source');
 

@@ -88,7 +88,7 @@ async function loadTasks() {
       
       li.innerHTML = `
         <div class="task-header">
-          <h3 class="task-title">${task.title}</h3>
+          <h3 class="task-title">#${task.id} ${task.title}</h3>
         </div>
         <div class="badges">
           <span class="badge priority-${task.priority}">${task.priority}</span>
