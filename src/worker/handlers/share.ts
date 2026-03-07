@@ -170,224 +170,117 @@ publicShareHandlers.get("/:uuid", async (c) => {
         <title>${task.title} - 任务详情</title>
         <style>
           :root {
-            --primary-color: #2563eb;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --completed-color: #10b981;
-            --pending-color: #f59e0b;
+            --bg: #fafafa;
+            --surface: #ffffff;
+            --text: #171717;
+            --text-muted: #737373;
+            --border: #e5e5e5;
+            --radius: 8px;
           }
           body {
-            font-family:
-              -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-              Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
           }
-          .container {
-            width: 100%;
-            max-width: 600px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          .wrapper { max-width: 640px; margin: 40px auto; padding: 0 20px; }
+          .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.02);
+            border: 1px solid var(--border);
             overflow: hidden;
-            border: 1px solid var(--border-color);
           }
-          .header {
-            padding: 24px;
-            border-bottom: 1px solid var(--border-color);
-            background: linear-gradient(to bottom right, #ffffff, #f1f5f9);
-          }
-          .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-          }
-          .status-completed {
-            background: #d1fae5;
-            color: #065f46;
-          }
-          .status-pending {
-            background: #fef3c7;
-            color: #92400e;
-          }
-
-          h1 {
-            margin: 0;
-            font-size: 24px;
-            color: #0f172a;
-            line-height: 1.3;
-          }
-
-          .content {
-            padding: 24px;
-          }
-          .description {
-            font-size: 16px;
-            color: #334155;
-            white-space: pre-wrap;
-            margin-bottom: 24px;
-            background: #f8fafc;
-            padding: 16px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-color);
-          }
-
-          .meta-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-          }
-          .meta-item {
-            display: flex;
-            flex-direction: column;
-          }
-          .meta-label {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-          }
-          .meta-value {
-            font-size: 14px;
-            font-weight: 500;
-          }
-
-          .tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 24px;
-          }
-          .tag {
-            background: #eff6ff;
-            color: #1e40af;
-            padding: 2px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            border: 1px solid #bfdbfe;
-          }
-
-          .footer {
-            padding: 16px 24px;
-            background: #f1f5f9;
-            border-top: 1px solid var(--border-color);
-            font-size: 12px;
-            color: var(--text-muted);
-            text-align: center;
-          }
-
-          .priority-high {
-            color: #ef4444;
-            font-weight: bold;
-          }
-          .priority-medium {
-            color: #f59e0b;
-          }
-          .priority-low {
-            color: #10b981;
-          }
-
-          @media (max-width: 480px) {
-            body {
-              padding: 10px;
-            }
-            h1 {
-              font-size: 20px;
-            }
+          .header { padding: 32px 32px 24px; border-bottom: 1px solid var(--border); }
+          .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+          .status-completed .status-dot { background: #10b981; }
+          .status-pending .status-dot { background: #f59e0b; }
+          .status-text { font-size: 13px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; margin-bottom: 16px; }
+          h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; color: #0a0a0a; word-break: break-word; }
+          
+          .content { padding: 32px; }
+          .description { font-size: 16px; color: #404040; white-space: pre-wrap; margin-bottom: 32px; line-height: 1.7; word-break: break-word; }
+          
+          .meta-section { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px; padding: 24px; background: #fdfdfd; border-radius: 6px; border: 1px solid #f0f0f0; }
+          .meta-item { display: flex; flex-direction: column; gap: 4px; }
+          .meta-label { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+          .meta-value { font-size: 14px; color: var(--text); font-weight: 500; word-break: break-word; }
+          
+          .priority-high { color: #dc2626; }
+          .priority-medium { color: #d97706; }
+          .priority-low { color: #059669; }
+          
+          .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+          .tag { background: #f4f4f5; color: #52525b; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: 500; border: 1px solid #e4e4e7; transition: all 0.2s; }
+          .tag:hover { background: #e4e4e7; }
+          
+          .context-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 6px; position: relative; }
+          .context-box::before { content: "AI Context"; position: absolute; top: -10px; left: 16px; background: #f8fafc; padding: 0 8px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid #e2e8f0; border-radius: 12px; }
+          .context-text { font-size: 13px; color: #475569; font-style: italic; margin: 0; line-height: 1.6; word-break: break-word; }
+          
+          .footer { padding: 20px 32px; background: #fafafa; border-top: 1px solid var(--border); font-size: 12px; color: #a3a3a3; display: flex; justify-content: space-between; align-items: center; }
+          .brand { font-weight: 600; color: #d4d4d4; letter-spacing: -0.02em; }
+          
+          @media (max-width: 640px) {
+            .wrapper { margin: 20px auto; }
+            .header, .content, .footer { padding: 20px; }
+            .meta-section { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+            h1 { font-size: 24px; }
           }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <span class="status-badge ${statusClass}">${statusLabel}</span>
-            <h1>${task.title}</h1>
-          </div>
-          <div class="content">
-            ${task.description
-              ? html`<div class="description">${task.description}</div>`
-              : ""}
-
-            <div class="meta-grid">
-              <div class="meta-item">
-                <span class="meta-label">优先级</span>
-                <span class="meta-value priority-${task.priority}"
-                  >${task.priority.toUpperCase()}</span
-                >
+        <div class="wrapper">
+          <div class="card">
+            <div class="header">
+              <div class="status-text status-${task.status}">
+                <span class="status-dot"></span>
+                ${statusLabel}
               </div>
-              ${task.category_name
-                ? html` <div class="meta-item">
-                    <span class="meta-label">分类</span>
-                    <span
-                      class="meta-value"
-                      style="color: ${task.category_color}"
-                      >${task.category_name}</span
-                    >
-                  </div>`
-                : ""}
-              ${task.due_date
-                ? html` <div class="meta-item">
-                    <span class="meta-label">截止日期</span>
-                    <span class="meta-value"
-                      >${new Date(task.due_date + "Z").toLocaleString("zh-CN", {
-                        hour12: false,
-                      })}</span
-                    >
-                  </div>`
-                : ""}
-              ${task.remind_at
-                ? html` <div class="meta-item">
-                    <span class="meta-label">提醒时间</span>
-                    <span class="meta-value"
-                      >${new Date(task.remind_at + "Z").toLocaleString(
-                        "zh-CN",
-                        { hour12: false },
-                      )}</span
-                    >
-                  </div>`
-                : ""}
+              <h1>${task.title}</h1>
             </div>
+            <div class="content">
+              ${task.description ? html`<div class="description">${task.description}</div>` : ""}
+              
+              <div class="meta-section">
+                <div class="meta-item">
+                  <span class="meta-label">优先级 / Priority</span>
+                  <span class="meta-value priority-${task.priority}">${task.priority.toUpperCase()}</span>
+                </div>
+                ${task.category_name ? html`
+                <div class="meta-item">
+                  <span class="meta-label">分类 / Category</span>
+                  <span class="meta-value" style="color: ${task.category_color || 'inherit'}">${task.category_name}</span>
+                </div>` : ""}
+                ${task.due_date ? html`
+                <div class="meta-item">
+                  <span class="meta-label">截止日期 / Due Date</span>
+                  <span class="meta-value">${new Date(task.due_date + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
+                </div>` : ""}
+                ${task.remind_at ? html`
+                <div class="meta-item">
+                  <span class="meta-label">提醒时间 / Reminder</span>
+                  <span class="meta-value">${new Date(task.remind_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
+                </div>` : ""}
+              </div>
 
-            ${tags.length > 0
-              ? html` <div class="meta-label" style="margin-bottom: 8px;">
-                    标签
-                  </div>
-                  <div class="tags">
-                    ${tags.map(
-                      (t: any) => html`<span class="tag">#${t.name}</span>`,
-                    )}
-                  </div>`
-              : ""}
-            ${metadata && metadata.context
-              ? html` <div class="meta-label" style="margin-bottom: 8px;">
-                    AI 溯源上下文
-                  </div>
-                  <div
-                    style="font-size: 13px; color: #475569; background: #f1f5f9; padding: 12px; border-radius: 6px; font-style: italic;"
-                  >
-                    "${metadata.context}"
-                  </div>`
-              : ""}
-          </div>
-          <div class="footer">
-            此链接为临时分享链接，将于
-            ${new Date(share.expires_at + "Z").toLocaleString("zh-CN", {
-              hour12: false,
-            })}
-            过期。
-            <br />Powered by claw-owner-task
+              ${tags.length > 0 ? html`
+              <div class="tags">
+                ${tags.map((t: any) => html`<span class="tag">#${t.name}</span>`)}
+              </div>` : ""}
+              
+              ${metadata && metadata.context ? html`
+              <div class="context-box">
+                <p class="context-text">"${metadata.context}"</p>
+              </div>` : ""}
+            </div>
+            <div class="footer">
+              <span>过期时间: ${new Date(share.expires_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
+              <span class="brand">CLAW TASK</span>
+            </div>
           </div>
         </div>
       </body>
@@ -404,44 +297,19 @@ function errorPage(title: string, message: string) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${title}</title>
         <style>
-          body {
-            font-family: system-ui;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: #f8fafc;
-            color: #1e293b;
-          }
-          .card {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            text-align: center;
-            max-width: 400px;
-          }
-          h1 {
-            color: #ef4444;
-            margin-top: 0;
-          }
-          p {
-            color: #64748b;
-            line-height: 1.5;
-          }
+          :root { --bg: #fafafa; --surface: #ffffff; --text: #171717; --text-muted: #737373; --border: #e5e5e5; }
+          body { font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; -webkit-font-smoothing: antialiased; }
+          .card { background: var(--surface); padding: 40px; border-radius: 12px; box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.02); border: 1px solid var(--border); text-align: center; max-width: 400px; width: 100%; margin: 20px; }
+          h1 { color: #dc2626; margin: 0 0 12px 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+          p { color: var(--text-muted); line-height: 1.6; margin: 0 0 24px 0; font-size: 15px; }
+          .brand { font-size: 12px; font-weight: 600; color: #d4d4d4; letter-spacing: 0.05em; }
         </style>
       </head>
       <body>
         <div class="card">
           <h1>${title}</h1>
           <p>${message}</p>
-          <hr
-            style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;"
-          />
-          <div style="font-size: 0.875rem; color: #94a3b8;">
-            claw-owner-task
-          </div>
+          <div class="brand">CLAW TASK</div>
         </div>
       </body>
     </html>

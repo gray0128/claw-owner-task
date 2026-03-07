@@ -30,16 +30,19 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>页面不存在</title>
         <style>
-          body { font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f9fafb; color: #333; }
-          .container { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-          h1 { color: #ef4444; font-size: 1.5rem; margin-bottom: 0.5rem; }
-          p { color: #6b7280; }
+          :root { --bg: #fafafa; --surface: #ffffff; --text: #171717; --text-muted: #737373; --border: #e5e5e5; }
+          body { font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; -webkit-font-smoothing: antialiased; }
+          .card { background: var(--surface); padding: 40px; border-radius: 12px; box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.02); border: 1px solid var(--border); text-align: center; max-width: 400px; width: 100%; margin: 20px; }
+          h1 { color: #dc2626; margin: 0 0 12px 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+          p { color: var(--text-muted); line-height: 1.6; margin: 0 0 24px 0; font-size: 15px; }
+          .brand { font-size: 12px; font-weight: 600; color: #d4d4d4; letter-spacing: 0.05em; }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div class="card">
           <h1>页面不存在或已失效</h1>
           <p>请重新发起总结</p>
+          <div class="brand">CLAW TASK</div>
         </div>
       </body>
       </html>
@@ -58,16 +61,19 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>总结已过期</title>
         <style>
-          body { font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f9fafb; color: #333; }
-          .container { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-          h1 { color: #ef4444; font-size: 1.5rem; margin-bottom: 0.5rem; }
-          p { color: #6b7280; }
+          :root { --bg: #fafafa; --surface: #ffffff; --text: #171717; --text-muted: #737373; --border: #e5e5e5; }
+          body { font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; -webkit-font-smoothing: antialiased; }
+          .card { background: var(--surface); padding: 40px; border-radius: 12px; box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.02); border: 1px solid var(--border); text-align: center; max-width: 400px; width: 100%; margin: 20px; }
+          h1 { color: #dc2626; margin: 0 0 12px 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+          p { color: var(--text-muted); line-height: 1.6; margin: 0 0 24px 0; font-size: 15px; }
+          .brand { font-size: 12px; font-weight: 600; color: #d4d4d4; letter-spacing: 0.05em; }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div class="card">
           <h1>页面已过期</h1>
           <p>请重新发起总结</p>
+          <div class="brand">CLAW TASK</div>
         </div>
       </body>
       </html>
@@ -91,78 +97,107 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
       <title>AI 任务总结</title>
       <style>
         :root {
-          --primary: #3b82f6;
-          --bg: #f3f4f6;
+          --bg: #fafafa;
           --surface: #ffffff;
-          --text-main: #1f2937;
-          --text-muted: #6b7280;
-          --border: #e5e7eb;
+          --text: #171717;
+          --text-muted: #737373;
+          --border: #e5e5e5;
+          --radius: 12px;
         }
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; line-height: 1.6; }
-        .max-w { max-width: 800px; margin: 0 auto; padding: 20px; }
-        header { background: var(--surface); padding: 30px 20px; text-align: center; border-bottom: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        h1 { margin: 0 0 10px; font-size: 1.8rem; }
-        .meta { color: var(--text-muted); font-size: 0.9rem; }
-        .card { background: var(--surface); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .card h2 { margin-top: 0; font-size: 1.25rem; border-bottom: 2px solid var(--bg); padding-bottom: 10px; margin-bottom: 15px; }
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-box { background: var(--bg); padding: 15px; border-radius: 8px; text-align: center; }
-        .stat-num { font-size: 1.8rem; font-weight: bold; color: var(--primary); }
-        .stat-label { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
-        ul { list-style-type: none; padding-left: 0; margin: 0; }
-        li { padding: 10px 0; border-bottom: 1px solid var(--bg); }
-        li:last-child { border-bottom: none; }
-        .task-title { font-weight: 500; }
-        .task-desc { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; }
-        .assessment { font-size: 1.05rem; line-height: 1.7; background: #eff6ff; color: #1e3a8a; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); }
+        body {
+          font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background-color: var(--bg);
+          color: var(--text);
+          line-height: 1.6;
+          margin: 0;
+          padding: 0;
+          -webkit-font-smoothing: antialiased;
+        }
+        .wrapper { max-width: 720px; margin: 40px auto; padding: 0 20px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8px 0; color: #0a0a0a; word-break: break-word; }
+        .header .meta { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+        
+        .grid { display: grid; gap: 24px; margin-bottom: 40px; }
+        .card { background: var(--surface); border-radius: var(--radius); padding: 32px; box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.02); border: 1px solid var(--border); }
+        .card h2 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 24px 0; display: flex; align-items: center; gap: 8px; }
+        
+        .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .stat-box { background: #fdfdfd; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #f0f0f0; }
+        .stat-num { font-size: 36px; font-weight: 700; letter-spacing: -0.04em; color: #171717; line-height: 1; margin-bottom: 4px; }
+        .stat-label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+        
+        .task-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+        .task-item { background: #fdfdfd; border: 1px solid #f0f0f0; border-radius: 8px; padding: 16px 20px; border-left: 3px solid #171717; }
+        .task-item.warning { border-left-color: #dc2626; }
+        .task-title { font-size: 16px; font-weight: 600; color: #171717; margin-bottom: 4px; line-height: 1.4; word-break: break-word; }
+        .task-desc { font-size: 14px; color: #52525b; line-height: 1.6; margin: 0; word-break: break-word; }
+        
+        .assessment { font-size: 16px; line-height: 1.8; color: #27272a; padding: 24px; background: #f4f4f5; border-radius: 8px; font-style: italic; position: relative; word-break: break-word; }
+        .assessment::before { content: '"'; font-size: 48px; color: #d4d4d8; position: absolute; top: 12px; left: 16px; font-family: Georgia, serif; line-height: 1; }
+        .assessment div { position: relative; z-index: 1; text-indent: 24px; margin: 0; }
+        
+        .footer { text-align: center; padding: 20px; font-size: 12px; font-weight: 600; color: #d4d4d4; letter-spacing: 0.05em; }
+
+        @media (max-width: 640px) {
+          .wrapper { margin: 20px auto; }
+          .card { padding: 24px; }
+          .stats-container { grid-template-columns: 1fr; }
+        }
       </style>
     </head>
     <body>
-      <header>
-        <h1>${summaryData.title || 'AI 任务总结'}</h1>
-        <div class="meta">有效至: ${new Date(expiresAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</div>
-      </header>
-      <div class="max-w">
-        <div class="card">
-          <h2>📊 任务概览</h2>
-          <div class="stat-grid">
-            <div class="stat-box"><div class="stat-num">${summaryData.stats?.total_pending || 0}</div><div class="stat-label">待处理</div></div>
-            <div class="stat-box"><div class="stat-num">${summaryData.stats?.in_progress || 0}</div><div class="stat-label">处理中</div></div>
-            <div class="stat-box"><div class="stat-num">${summaryData.stats?.overdue || 0}</div><div class="stat-label">已延期</div></div>
+      <div class="wrapper">
+        <header class="header">
+          <h1>${summaryData.title || 'AI 任务总结'}</h1>
+          <div class="meta">有效至: ${new Date(expiresAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</div>
+        </header>
+        
+        <div class="grid">
+          <div class="card">
+            <h2>概览 / Overview</h2>
+            <div class="stats-container">
+              <div class="stat-box"><div class="stat-num">${summaryData.stats?.total_pending || 0}</div><div class="stat-label">待处理</div></div>
+              <div class="stat-box"><div class="stat-num">${summaryData.stats?.in_progress || 0}</div><div class="stat-label">处理中</div></div>
+              <div class="stat-box"><div class="stat-num" style="color: ${summaryData.stats?.overdue > 0 ? '#dc2626' : 'inherit'}">${summaryData.stats?.overdue || 0}</div><div class="stat-label">已延期</div></div>
+            </div>
+          </div>
+          
+          ${summaryData.core_tasks && summaryData.core_tasks.length > 0 ? `
+          <div class="card">
+            <h2>核心必做 / Core Tasks</h2>
+            <ul class="task-list">
+              ${summaryData.core_tasks.map((t: any) => `
+                <li class="task-item">
+                  <div class="task-title">${t.title}</div>
+                  ${t.reason ? `<p class="task-desc">${t.reason}</p>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>` : ''}
+
+          ${summaryData.warnings && summaryData.warnings.length > 0 ? `
+          <div class="card">
+            <h2>风险警告 / Warnings</h2>
+            <ul class="task-list">
+              ${summaryData.warnings.map((w: any) => `
+                <li class="task-item warning">
+                  <div class="task-title">${w.title}</div>
+                  <p class="task-desc">${w.suggestion}</p>
+                </li>
+              `).join('')}
+            </ul>
+          </div>` : ''}
+
+          <div class="card">
+            <h2>综合评估 / Assessment</h2>
+            <div class="assessment">
+              <div>${summaryData.overall_assessment || '暂无建议'}</div>
+            </div>
           </div>
         </div>
         
-        ${summaryData.core_tasks && summaryData.core_tasks.length > 0 ? `
-        <div class="card">
-          <h2>🎯 今日核心必做</h2>
-          <ul>
-            ${summaryData.core_tasks.map((t: any) => `
-              <li>
-                <div class="task-title">🔥 ${t.title}</div>
-                ${t.reason ? `<div class="task-desc">${t.reason}</div>` : ''}
-              </li>
-            `).join('')}
-          </ul>
-        </div>` : ''}
-
-        ${summaryData.warnings && summaryData.warnings.length > 0 ? `
-        <div class="card">
-          <h2>⚠️ 风险与拖延警告</h2>
-          <ul>
-            ${summaryData.warnings.map((w: any) => `
-              <li>
-                <div class="task-title">❗ ${w.title}</div>
-                <div class="task-desc">${w.suggestion}</div>
-              </li>
-            `).join('')}
-          </ul>
-        </div>` : ''}
-
-        <div class="card">
-          <h2>💡 综合评估与建议</h2>
-          <div class="assessment">${summaryData.overall_assessment || '暂无建议'}</div>
-        </div>
+        <div class="footer">CLAW TASK</div>
       </div>
     </body>
     </html>
