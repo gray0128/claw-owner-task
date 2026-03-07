@@ -101,6 +101,12 @@ export default {
         WHERE created_at <= datetime('now', '-30 days')
       `).run();
 
+      // 2.5. Clean up old event dedup records (older than 1 day)
+      await env.DB.prepare(`
+        DELETE FROM event_dedup
+        WHERE created_at <= datetime('now', '-1 day')
+      `).run();
+
       // 3. Clean up expired task shares
       await env.DB.prepare(`
         DELETE FROM task_shares

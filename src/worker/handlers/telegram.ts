@@ -3,9 +3,9 @@ import { Bindings } from '../index';
 import { aiHandlers } from './ai';
 import { authSummaryHandlers } from './summary';
 import { taskHandlers } from './tasks';
-import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
-import { createListUrl } from './list';
 import { createShareUrl } from './share';
+import { createListUrl } from './list';
+import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -163,7 +163,8 @@ app.post('/', async (c) => {
                         if (addRes.ok) {
                             const addData: any = await addRes.json();
                             if (addData.success) {
-                                await sendTelegramNotification(telegramToken, chatId, `✅ <b>任务添加成功</b>\n\n任务: <b>${escapeTelegramHTML(title)}</b>\nTask ID: ${addData.data.id}`, 'HTML');
+                                const shareUrl = await createShareUrl(c, addData.data.id);
+                                await sendTelegramNotification(telegramToken, chatId, `✅ <b>任务添加成功</b>\n\n任务: <b>${escapeTelegramHTML(title)}</b>\nTask ID: ${addData.data.id}\n链接: ${escapeTelegramHTML(shareUrl)}`, 'HTML');
                             } else {
                                 await sendTelegramNotification(telegramToken, chatId, `❌ <b>添加失败</b>\n<pre>${escapeTelegramHTML(addData.error?.message || '未知错误')}</pre>`, 'HTML');
                             }
@@ -199,7 +200,13 @@ app.post('/', async (c) => {
                     }
 
                     const replyText = await formatTelegramResponse(c, aiResult);
-                    await sendTelegramNotification(telegramToken, chatId, replyText, 'HTML');
+                    const sendResult = await sendTelegramNotification(telegramToken, chatId, replyText, 'HTML');
+                    if (!sendResult.success) {
+                        console.error('[Telegram Webhook] Failed to send formatted response:', JSON.stringify(sendResult.error));
+                        // 回退纯文本模式重试
+                        const plainText = replyText.replace(/<[^>]+>/g, '');
+                        await sendTelegramNotification(telegramToken, chatId, plainText);
+                    }
 
                 } catch (e: any) {
                     console.error('[Telegram Webhook] Error processing AI request:', e);

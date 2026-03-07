@@ -110,6 +110,30 @@ app.post('/', async (c) => {
 
     // Handle Event: im.message.receive_v1
     if (bodyObj.header && bodyObj.header.event_type === 'im.message.receive_v1') {
+        // Event deduplication: Feishu retries webhook delivery if no timely response
+        const eventId = bodyObj.header.event_id;
+        if (eventId) {
+            try {
+                const existing = await c.env.DB.prepare(
+                    'SELECT event_id FROM event_dedup WHERE event_id = ?'
+                ).bind(eventId).first();
+
+                if (existing) {
+                    console.log(`[Feishu Webhook] Duplicate event detected, skipping: ${eventId}`);
+                    return c.json({code: 0});
+                }
+
+                // Record this event as processed
+                await c.env.DB.prepare(
+                    'INSERT INTO event_dedup (event_id) VALUES (?)'
+                ).bind(eventId).run();
+            } catch (dedupErr) {
+                // INSERT 失败（PRIMARY KEY 冲突）说明另一个并发请求已处理此事件
+                console.log(`[Feishu Webhook] Dedup INSERT conflict for ${eventId}, treating as duplicate`);
+                return c.json({code: 0});
+            }
+        }
+
         const event = bodyObj.event;
         const message = event.message;
 
@@ -217,7 +241,8 @@ app.post('/', async (c) => {
                         if (addRes.ok) {
                             const addData: any = await addRes.json();
                             if (addData.success) {
-                                await sendFeishuMessage(tenantAccessToken, receiveId, `✅ 任务添加成功\n\n任务: ${title}\nTask ID: ${addData.data.id}`, receiveIdType, 'text');
+                                const shareUrl = await createShareUrl(c, addData.data.id);
+                                await sendFeishuMessage(tenantAccessToken, receiveId, `✅ 任务添加成功\n\n任务: ${title}\nTask ID: ${addData.data.id}\n链接: ${shareUrl}`, receiveIdType, 'text');
                             } else {
                                 await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 添加失败\n${addData.error?.message || '未知错误'}`, receiveIdType, 'text');
                             }

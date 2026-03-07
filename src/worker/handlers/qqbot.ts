@@ -3,6 +3,7 @@ import { Bindings } from '../index';
 import { aiHandlers } from './ai';
 import { authSummaryHandlers } from './summary';
 import { taskHandlers } from './tasks';
+import { createShareUrl } from './share';
 import { 
   getQQAccessToken, 
   sendQQNotification, 
@@ -165,7 +166,8 @@ app.post('/', async (c) => {
                         }, c.env);
                         const addData: any = await addRes.json();
                         if (addData.success) {
-                            await sendQQNotification(token, openid, `✅ 任务添加成功\n\n任务: ${cmdArgs}\nTask ID: ${addData.data.id}`, msgId);
+                            const shareUrl = await createShareUrl(c, addData.data.id);
+                            await sendQQNotification(token, openid, `✅ 任务添加成功\n\n任务: ${cmdArgs}\nTask ID: ${addData.data.id}\n链接: ${shareUrl}`, msgId);
                         } else {
                             await sendQQNotification(token, openid, `❌ 添加失败\n${addData.error?.message || '未知错误'}`, msgId);
                         }
