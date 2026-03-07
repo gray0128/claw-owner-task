@@ -145,7 +145,7 @@ export default {
           console.log(`Cron Summary Triggered! Local time matched configuration: ${currentTzTime}`);
           
           // Construct mock request for summary generation
-          const summaryUrl = "http://localhost/api/summary";
+          const summaryUrl = "http://localhost/api/summary?source=cron";
           const summaryReq = new Request(summaryUrl, {
             method: "POST",
             headers: {

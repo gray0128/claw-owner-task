@@ -119,7 +119,7 @@ app.post('/', async (c) => {
                     const publicProto = publicUrl.protocol.replace(':', '');
 
                     // Directly call the summary generation handler
-                    const summaryRes = await authSummaryHandlers.request('/', {
+                    const summaryRes = await authSummaryHandlers.request('/?source=telegram', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${c.env.TASK_API_KEY}`,

@@ -175,7 +175,7 @@ app.post('/', async (c) => {
                     const publicHost = publicUrl.host;
                     const publicProto = publicUrl.protocol.replace(':', '');
 
-                    const summaryRes = await authSummaryHandlers.request('/', {
+                    const summaryRes = await authSummaryHandlers.request('/?source=feishu', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${c.env.TASK_API_KEY}`,

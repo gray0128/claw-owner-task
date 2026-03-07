@@ -130,7 +130,7 @@ app.post('/', async (c) => {
                         await sendQQNotification(token, openid, `⏳ 正在生成任务总结，请稍候...`, msgId);
                         
                         const publicUrl = new URL(c.req.url);
-                        const summaryRes = await authSummaryHandlers.request('/', {
+                        const summaryRes = await authSummaryHandlers.request('/?source=qq', {
                             method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${c.env.TASK_API_KEY}`,

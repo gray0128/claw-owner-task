@@ -316,8 +316,10 @@ authSummaryHandlers.post('/', async (c) => {
     summaryUrl = `${protocol}://${host}/summary/${uuid}`;
   }
   
+  const source = c.req.query('source');
+
   let barkPushUrl = null;
-  if (c.env.BARK_URL) {
+  if (c.env.BARK_URL && (!source || source === 'cron')) {
     const baseUrl = c.env.BARK_URL.endsWith('/') ? c.env.BARK_URL : c.env.BARK_URL + '/';
     barkPushUrl = `${baseUrl}AI 任务总结?url=${encodeURIComponent(summaryUrl)}`;
     try {
@@ -327,7 +329,7 @@ authSummaryHandlers.post('/', async (c) => {
     }
   }
 
-  if (c.env.TELEGRAM_BOT_TOKEN && c.env.TELEGRAM_CHAT_ID) {
+  if (c.env.TELEGRAM_BOT_TOKEN && c.env.TELEGRAM_CHAT_ID && (!source || source === 'cron' || source === 'telegram')) {
     try {
       const msg = `<b>📊 AI 任务总结已生成</b>\n\n<a href="${escapeTelegramHTML(summaryUrl)}">点击查看详细总结网页</a>`;
       await sendTelegramNotification(c.env.TELEGRAM_BOT_TOKEN, c.env.TELEGRAM_CHAT_ID, msg, 'HTML');
@@ -336,7 +338,7 @@ authSummaryHandlers.post('/', async (c) => {
     }
   }
 
-  if (c.env.QQ_APP_ID && c.env.QQ_APP_SECRET && c.env.QQ_ALLOWED_OPENID) {
+  if (c.env.QQ_APP_ID && c.env.QQ_APP_SECRET && c.env.QQ_ALLOWED_OPENID && (!source || source === 'cron' || source === 'qq')) {
     try {
       const accessToken = await getQQAccessToken(c.env.QQ_APP_ID, c.env.QQ_APP_SECRET);
       if (accessToken) {
@@ -348,7 +350,7 @@ authSummaryHandlers.post('/', async (c) => {
     }
   }
 
-  if (c.env.FEISHU_APP_ID && c.env.FEISHU_APP_SECRET && c.env.FEISHU_ALLOWED_CHAT_ID) {
+  if (c.env.FEISHU_APP_ID && c.env.FEISHU_APP_SECRET && c.env.FEISHU_ALLOWED_CHAT_ID && (!source || source === 'cron' || source === 'feishu')) {
     try {
       const tenantAccessToken = await getTenantAccessToken(c.env.FEISHU_APP_ID, c.env.FEISHU_APP_SECRET);
       if (tenantAccessToken) {
