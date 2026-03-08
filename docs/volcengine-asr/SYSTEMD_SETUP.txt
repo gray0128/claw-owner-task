@@ -1,0 +1,57 @@
+# 手动添加环境变量到 systemd 服务
+
+## 步骤 1: 追加环境变量到服务文件
+
+先将以下内容保存为临时文件，或者手动编辑服务文件，在 [Service] 部分添加:
+
+Environment=VOLC_API_KEY=你的火山引擎API Key
+Environment=S3_ENDPOINT=你的S3端点URL
+Environment=S3_ACCESS_KEY_ID=你的S3 Access Key ID
+Environment=S3_SECRET_ACCESS_KEY=你的S3 Secret Access Key
+Environment=S3_REGION=auto
+
+或者使用 echo 命令（记得替换为你的真实值）:
+
+```bash
+echo 'Environment=VOLC_API_KEY=你的API Key' >> ~/.config/systemd/user/openclaw-gateway.service
+echo 'Environment=S3_ENDPOINT=你的S3端点URL' >> ~/.config/systemd/user/openclaw-gateway.service
+echo 'Environment=S3_ACCESS_KEY_ID=你的S3 Access Key ID' >> ~/.config/systemd/user/openclaw-gateway.service
+echo 'Environment=S3_SECRET_ACCESS_KEY=你的S3 Secret Access Key' >> ~/.config/systemd/user/openclaw-gateway.service
+echo 'Environment=S3_REGION=auto' >> ~/.config/systemd/user/openclaw-gateway.service
+```
+
+---
+
+## 步骤 2: 验证文件内容 (可选)
+
+确认一下有没有追加成功:
+
+```bash
+tail -10 ~/.config/systemd/user/openclaw-gateway.service
+```
+
+应该能看到刚添加的 Environment=... 行
+
+---
+
+## 步骤 3: 重新加载 systemd 并重启服务
+
+```bash
+# 重新加载 systemd 配置
+systemctl --user daemon-reload
+
+# 重启 OpenClaw 服务
+systemctl --user restart openclaw-gateway
+
+# 查看状态，确认启动成功
+systemctl --user status openclaw-gateway
+```
+
+---
+
+## 步骤 4: 验证
+
+重启后，发一条语音消息（任意平台），看看 OpenClaw 日志中有没有:
+"[Volcengine-ASR] 收到消息"
+
+如果有，说明 skill 已加载！
