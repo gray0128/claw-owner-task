@@ -1,6 +1,7 @@
 name = "claw-owner-task"
 main = "src/worker/index.ts"
 compatibility_date = "2024-02-22"
+workers_dev = true
 
 # D1 Database binding
 [[d1_databases]]
