@@ -144,17 +144,27 @@ publicShareHandlers.get("/:uuid", async (c) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${task.title} - 任务详情</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
           :root {
-            --bg: #fafafa;
+            --primary: #7c3aed;
+            --primary-light: #a78bfa;
+            --primary-dark: #5b21b6;
+            --bg: #f5f3ff;
             --surface: #ffffff;
-            --text: #171717;
-            --text-muted: #737373;
-            --border: #e5e5e5;
-            --radius: 8px;
+            --text: #1e1b4b;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --radius: 16px;
+            --green: #10b981;
+            --amber: #f59e0b;
+            --red: #ef4444;
           }
+          * { box-sizing: border-box; }
           body {
-            font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             line-height: 1.6;
@@ -162,58 +172,195 @@ publicShareHandlers.get("/:uuid", async (c) => {
             padding: 0;
             -webkit-font-smoothing: antialiased;
           }
-          .wrapper { max-width: 640px; margin: 40px auto; padding: 0 20px; }
+          .wrapper { max-width: 680px; margin: 40px auto; padding: 0 20px; animation: fadeInUp 0.5s ease-out; }
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
           .card {
             background: var(--surface);
             border-radius: var(--radius);
-            box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.02);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(124,58,237,0.06);
             border: 1px solid var(--border);
             overflow: hidden;
+            transition: box-shadow 0.3s ease;
           }
-          .header { padding: 32px 32px 24px; border-bottom: 1px solid var(--border); }
-          .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-          .status-completed .status-dot { background: #10b981; }
-          .status-pending .status-dot { background: #f59e0b; }
-          .status-text { font-size: 13px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; margin-bottom: 16px; }
-          h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3; color: #0a0a0a; word-break: break-word; }
-          
-          .content { padding: 32px; }
-          .description { font-size: 16px; color: #404040; white-space: pre-wrap; margin-bottom: 32px; line-height: 1.7; word-break: break-word; }
-          
-          .meta-section { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px; padding: 24px; background: #fdfdfd; border-radius: 6px; border: 1px solid #f0f0f0; }
-          .meta-item { display: flex; flex-direction: column; gap: 4px; }
-          .meta-label { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-          .meta-value { font-size: 14px; color: var(--text); font-weight: 500; word-break: break-word; }
-          
-          .priority-high { color: #dc2626; }
-          .priority-medium { color: #d97706; }
-          .priority-low { color: #059669; }
-          
-          .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
-          .tag { background: #f4f4f5; color: #52525b; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: 500; border: 1px solid #e4e4e7; transition: all 0.2s; }
-          .tag:hover { background: #e4e4e7; }
-          
-          .context-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 6px; position: relative; }
-          .context-box::before { content: "AI Context"; position: absolute; top: -10px; left: 16px; background: #f8fafc; padding: 0 8px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid #e2e8f0; border-radius: 12px; }
-          .context-text { font-size: 13px; color: #475569; font-style: italic; margin: 0; line-height: 1.6; word-break: break-word; }
-          
-          .footer { padding: 20px 32px; background: #fafafa; border-top: 1px solid var(--border); font-size: 12px; color: #a3a3a3; display: flex; justify-content: space-between; align-items: center; }
-          .brand { font-weight: 600; color: #d4d4d4; letter-spacing: -0.02em; }
-          
+          .card:hover {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 12px 40px rgba(124,58,237,0.1);
+          }
+
+          .card-accent {
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+          }
+
+          .header { padding: 28px 32px 24px; }
+          .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 16px;
+          }
+          .status-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+          .status-completed .dot { background: var(--green); }
+          .status-completed { background: #d1fae5; color: #065f46; }
+          .status-pending .dot { background: var(--amber); }
+          .status-pending { background: #fef3c7; color: #92400e; }
+          .status-in_progress .dot { background: #3b82f6; }
+          .status-in_progress { background: #dbeafe; color: #1e40af; }
+
+          h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.3;
+            color: var(--text);
+            word-break: break-word;
+          }
+
+          .content { padding: 0 32px 32px; }
+          .description {
+            font-size: 15px;
+            color: #4b5563;
+            white-space: pre-wrap;
+            margin-bottom: 28px;
+            line-height: 1.7;
+            word-break: break-word;
+            padding: 16px 20px;
+            background: #fafafa;
+            border-radius: 10px;
+            border: 1px solid #f0f0f0;
+          }
+
+          .meta-section {
+            margin-bottom: 24px;
+            background: #fafafa;
+            border-radius: 12px;
+            border: 1px solid #f0f0f0;
+            overflow: hidden;
+          }
+          .meta-row {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s ease;
+          }
+          .meta-row:last-child { border-bottom: none; }
+          .meta-row:hover { background: #f5f5f5; }
+          .meta-icon { font-size: 15px; width: 28px; flex-shrink: 0; opacity: 0.7; }
+          .meta-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            width: 100px;
+            flex-shrink: 0;
+          }
+          .meta-value {
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 600;
+            word-break: break-word;
+          }
+
+          .priority-pill {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+          .priority-high { background: #fee2e2; color: #b91c1c; }
+          .priority-medium { background: #fef3c7; color: #b45309; }
+          .priority-low { background: #d1fae5; color: #047857; }
+
+          .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+          .tag {
+            background: #ede9fe;
+            color: var(--primary-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #ddd6fe;
+            transition: all 0.2s;
+          }
+          .tag:hover { background: #ddd6fe; }
+
+          .context-box {
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+            border: 1px solid #ddd6fe;
+            padding: 24px 24px 24px 44px;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+          }
+          .context-box::before {
+            content: 'AI Context';
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--primary-light);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+          }
+          .context-text {
+            font-size: 13px;
+            color: #3b0764;
+            font-style: italic;
+            margin: 0;
+            line-height: 1.7;
+            word-break: break-word;
+          }
+
+          .footer {
+            padding: 16px 32px;
+            background: #fafafa;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: #a1a1aa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .brand {
+            font-weight: 700;
+            color: var(--primary-light);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 11px;
+            opacity: 0.6;
+          }
+
           @media (max-width: 640px) {
             .wrapper { margin: 20px auto; }
-            .header, .content, .footer { padding: 20px; }
-            .meta-section { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
-            h1 { font-size: 24px; }
+            .header, .footer { padding-left: 20px; padding-right: 20px; }
+            .content { padding: 0 20px 24px; }
+            .meta-label { width: 80px; }
+            h1 { font-size: 20px; }
           }
         </style>
       </head>
       <body>
         <div class="wrapper">
           <div class="card">
+            <div class="card-accent"></div>
             <div class="header">
-              <div class="status-text status-${task.status}">
-                <span class="status-dot"></span>
+              <div class="status-badge status-${task.status}">
+                <span class="dot"></span>
                 ${statusLabel}
               </div>
               <h1>${task.title}</h1>
@@ -222,32 +369,44 @@ publicShareHandlers.get("/:uuid", async (c) => {
               ${task.description ? html`<div class="description">${task.description}</div>` : ""}
               
               <div class="meta-section">
-                <div class="meta-item">
-                  <span class="meta-label">任务ID / Task ID</span>
+                <div class="meta-row">
+                  <span class="meta-icon">🆔</span>
+                  <span class="meta-label">任务 ID</span>
                   <span class="meta-value">#${task.id}</span>
                 </div>
-                <div class="meta-item">
-                  <span class="meta-label">创建时间 / Created At</span>
+                <div class="meta-row">
+                  <span class="meta-icon">🕒</span>
+                  <span class="meta-label">创建时间</span>
                   <span class="meta-value">${new Date(task.created_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
                 </div>
-                <div class="meta-item">
-                  <span class="meta-label">优先级 / Priority</span>
-                  <span class="meta-value priority-${task.priority}">${task.priority.toUpperCase()}</span>
+                <div class="meta-row">
+                  <span class="meta-icon">⚡</span>
+                  <span class="meta-label">优先级</span>
+                  <span class="meta-value"><span class="priority-pill priority-${task.priority}">${task.priority.toUpperCase()}</span></span>
                 </div>
                 ${task.category_name ? html`
-                <div class="meta-item">
-                  <span class="meta-label">分类 / Category</span>
+                <div class="meta-row">
+                  <span class="meta-icon">📂</span>
+                  <span class="meta-label">分类</span>
                   <span class="meta-value" style="color: ${task.category_color || 'inherit'}">${task.category_name}</span>
                 </div>` : ""}
                 ${task.due_date ? html`
-                <div class="meta-item">
-                  <span class="meta-label">截止日期 / Due Date</span>
+                <div class="meta-row">
+                  <span class="meta-icon">📅</span>
+                  <span class="meta-label">截止日期</span>
                   <span class="meta-value">${new Date(task.due_date + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
                 </div>` : ""}
                 ${task.remind_at ? html`
-                <div class="meta-item">
-                  <span class="meta-label">提醒时间 / Reminder</span>
+                <div class="meta-row">
+                  <span class="meta-icon">⏰</span>
+                  <span class="meta-label">提醒时间</span>
                   <span class="meta-value">${new Date(task.remind_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
+                </div>` : ""}
+                ${task.recurring_rule && task.recurring_rule !== 'none' ? html`
+                <div class="meta-row">
+                  <span class="meta-icon">🔄</span>
+                  <span class="meta-label">重复规则</span>
+                  <span class="meta-value"><span class="priority-pill" style="background: #ede9fe; color: #5b21b6;">${task.recurring_rule === 'daily' ? '每天' : task.recurring_rule === 'weekly' ? '每周' : task.recurring_rule === 'monthly' ? '每月' : task.recurring_rule}</span></span>
                 </div>` : ""}
               </div>
 
@@ -263,7 +422,7 @@ publicShareHandlers.get("/:uuid", async (c) => {
             </div>
             <div class="footer">
               <span>过期时间: ${new Date(share.expires_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
-              <span class="brand">CLAW TASK</span>
+              <span class="brand">Claw Task</span>
             </div>
           </div>
         </div>
