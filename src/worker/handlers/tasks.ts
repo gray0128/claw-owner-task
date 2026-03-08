@@ -2,80 +2,57 @@ import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { calculateNextOccurrence, calculateNextRemindAt } from '../services/recurrence';
 import { createShareUrl, getOrCreateShareUrls } from './share';
+import { apiResponse as response, toSqliteUtc } from '../utils';
+import { isValidDate, normalizeDate, fromSqliteUtc } from '../helpers/date';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// Helper to format response
-const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
+/**
+ * 同步任务的标签关联。
+ * @param db    D1Database 实例
+ * @param taskId  任务 ID
+ * @param tags    标签名称数组
+ * @param replace 是否先删除旧关联（更新场景为 true）
+ */
+async function syncTaskTags(
+  db: D1Database,
+  taskId: number | string,
+  tags: string[],
+  replace: boolean = false
+): Promise<void> {
+  const nameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5]+$/;
 
-// Time format validation
-const isValidDate = (dateStr: string) => {
-  if (!dateStr || typeof dateStr !== 'string') return true;
-  const isoRegex = /^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/;
-  return isoRegex.test(dateStr) && !isNaN(Date.parse(dateStr));
-};
-
-// Helper: convert a Date object to SQLite-compatible "YYYY-MM-DD HH:MM:SS" UTC string
-const toSqliteUtc = (date: Date): string => {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
-};
-
-const normalizeDate = (d: any, timeZone: string = 'Asia/Shanghai') => {
-  if (!d || typeof d !== 'string') return d;
-  // If it has a timezone identifier (Z, +HH:mm, -HH:mm), parse it directly
-  if (/[Z]|[+-]\d{2}:\d{2}$/.test(d)) {
-    return toSqliteUtc(new Date(d));
+  // 如果是更新场景，先清空旧的关联
+  if (replace) {
+    await db.prepare('DELETE FROM task_tags WHERE task_id = ?').bind(taskId).run();
   }
 
-  // Floating time from AI/user: assume it is in the specified user timezone
-  let normalized = d.replace(' ', 'T');
-  if (normalized.length === 10) normalized += 'T00:00:00';
-  if (normalized.length === 16) normalized += ':00';
+  for (const tagIdentifier of tags) {
+    const tagName = String(tagIdentifier).trim();
 
-  try {
-    // Correct way to parse a floating time string as being in a specific timezone
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
+    // 跳过不合法的标签名
+    if (!nameRegex.test(tagName)) {
+      console.warn(`Skipping invalid tag name: ${tagName}`);
+      continue;
+    }
 
-    // We need to find the UTC time that, when formatted in `timeZone`, matches `normalized`
-    // A simpler approach in modern JS:
-    const dt = new Date(normalized); // This treats it as local to the RUNTIME (UTC in Workers)
-    // We need to adjust it.
+    // 查找或创建标签
+    let tagRecord = await db.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first();
+    let tagId = tagRecord?.id;
 
-    // Using a more robust approach for Workers environment:
-    // 1. Parse as UTC first
-    const utcDate = new Date(normalized + 'Z');
-    // 2. Get the "local" representation of that UTC date in the target timezone
-    const parts = formatter.formatToParts(utcDate);
-    const partMap: Record<string, string> = {};
-    parts.forEach(p => partMap[p.type] = p.value);
+    if (!tagId) {
+      const insertTag = await db.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first();
+      tagId = insertTag?.id;
+    }
 
-    const formattedInTz = `${partMap.year}-${partMap.month}-${partMap.day}T${partMap.hour}:${partMap.minute}:${partMap.second}Z`;
-    const offsetDate = new Date(formattedInTz);
-
-    // Difference tells us how far off the "UTC-as-local" interpretation was
-    const diff = utcDate.getTime() - offsetDate.getTime();
-    return toSqliteUtc(new Date(utcDate.getTime() + diff));
-  } catch (e) {
-    return toSqliteUtc(new Date(d));
+    // 建立关联（忽略重复）
+    if (tagId) {
+      try {
+        await db.prepare('INSERT INTO task_tags (task_id, tag_id) VALUES (?, ?)').bind(taskId, tagId).run();
+      } catch (e) { /* ignore constraint violation */ }
+    }
   }
-};
-
-// Helper: convert UTC string "YYYY-MM-DD HH:MM:SS" back to localized string
-const fromSqliteUtc = (utcStr: string | null, timeZone: string = 'Asia/Shanghai'): string | null => {
-  if (!utcStr) return null;
-  const date = new Date(utcStr.replace(' ', 'T') + 'Z');
-  return date.toLocaleString('zh-CN', { timeZone, hour12: false }).replace(/\//g, '-');
-};
+}
 
 // GET /api/tasks - List tasks
 app.get('/', async (c) => {
@@ -249,35 +226,7 @@ app.post('/', async (c) => {
     const taskId = insertResult?.id;
 
     if (taskId && tags && Array.isArray(tags)) {
-      const nameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5]+$/;
-
-      for (const tagIdentifier of tags) {
-        // Assume tagIdentifier might be a string (name) or number (id). We now prefer strings.
-        const tagName = String(tagIdentifier).trim();
-
-        if (!nameRegex.test(tagName)) {
-          // Skip invalid tags or we could fail the whole request. Here we skip with a warning.
-          console.warn(`Skipping invalid tag name: ${tagName}`);
-          continue;
-        }
-
-        // Check if tag exists
-        let tagRecord = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first();
-        let tagId = tagRecord?.id;
-
-        // If not exists, create it
-        if (!tagId) {
-          const insertTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first();
-          tagId = insertTag?.id;
-        }
-
-        if (tagId) {
-          // Ignore duplicate constraint errors if task is already tagged
-          try {
-            await c.env.DB.prepare('INSERT INTO task_tags (task_id, tag_id) VALUES (?, ?)').bind(taskId, tagId).run();
-          } catch (e) { /* ignore constraint violation */ }
-        }
-      }
+      await syncTaskTags(c.env.DB, taskId as number, tags);
     }
 
     const viewUrl = taskId ? await createShareUrl(c, taskId as number) : null;
@@ -376,27 +325,7 @@ app.put('/:id', async (c) => {
     }
 
     if (body.tags && Array.isArray(body.tags)) {
-      await c.env.DB.prepare('DELETE FROM task_tags WHERE task_id = ?').bind(id).run();
-      const nameRegex = /^[a-zA-Z0-9\u4e00-\u9fa5]+$/;
-
-      for (const tagIdentifier of body.tags) {
-        const tagName = String(tagIdentifier).trim();
-        if (!nameRegex.test(tagName)) continue;
-
-        let tagRecord = await c.env.DB.prepare('SELECT id FROM tags WHERE name = ?').bind(tagName).first();
-        let tagId = tagRecord?.id;
-
-        if (!tagId) {
-          const insertTag = await c.env.DB.prepare('INSERT INTO tags (name) VALUES (?) RETURNING id').bind(tagName).first();
-          tagId = insertTag?.id;
-        }
-
-        if (tagId) {
-          try {
-            await c.env.DB.prepare('INSERT INTO task_tags (task_id, tag_id) VALUES (?, ?)').bind(id, tagId).run();
-          } catch (e) { }
-        }
-      }
+      await syncTaskTags(c.env.DB, id, body.tags, true);
     }
 
     // Fetch the updated task to return

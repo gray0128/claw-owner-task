@@ -1,3 +1,5 @@
+import { toSqliteUtc } from '../utils';
+
 /**
  * Calculates the next due date based on the current due date and the recurring rule.
  * Everything is handled in UTC.
@@ -28,7 +30,7 @@ export function calculateNextOccurrence(currentDueDateStr: string | null, rule: 
   }
 
   // Format back to YYYY-MM-DD HH:mm:ss (UTC without Z)
-  return formatSqliteDate(date);
+  return toSqliteUtc(date);
 }
 
 /**
@@ -49,7 +51,7 @@ export function calculateNextRemindAt(currentDueDateStr: string, currentRemindAt
 
   const nextRemindAt = new Date(nextDueDate.getTime() - offsetMs);
 
-  return formatSqliteDate(nextRemindAt);
+  return toSqliteUtc(nextRemindAt);
 }
 
 /**
@@ -98,10 +100,5 @@ export function calculateNextFutureRemindAt(currentRemindAtStr: string, rule: st
     else if (rule === 'monthly') date.setUTCMonth(date.getUTCMonth() + 1);
   }
 
-  return formatSqliteDate(date);
-}
-
-function formatSqliteDate(date: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+  return toSqliteUtc(date);
 }

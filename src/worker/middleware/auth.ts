@@ -11,10 +11,7 @@ export async function authMiddleware(c: Context, next: Next) {
     return await next();
   }
 
-  // skip auth for qq webhook
-  if (c.req.path === '/api/webhook/qq' || c.req.path.endsWith('/webhook/qq')) {
-    return await next();
-  }
+
 
   // skip auth for feishu webhook
   if (c.req.path === '/api/webhook/feishu' || c.req.path.endsWith('/webhook/feishu')) {

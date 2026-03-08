@@ -6,54 +6,36 @@ import { authSummaryHandlers } from './summary';
 import { getTenantAccessToken, sendFeishuMessage, verifyFeishuSignature, decryptFeishuEvent } from '../services/feishu';
 import { createListUrl } from './list';
 import { createShareUrl } from './share';
+import { parseCommand, extractResult, isResponseExpired } from './bot-shared';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Helper to format AI response for Feishu text mode
 async function formatFeishuResponse(c: any, aiResult: any): Promise<string> {
-    if (!aiResult.success) {
-        const errMsg = aiResult.error?.message || JSON.stringify(aiResult.error);
-        return `❌ 操作失败\n${errMsg}`;
+    const r = await extractResult(c, aiResult);
+    
+    if (!r.success) {
+        return `❌ 操作失败\n${r.errorMessage!}`;
     }
-
-    const { ai_parsed, data } = aiResult;
+    
     let text = `✅ 操作成功\n\n`;
-
-    let intentStr = '任务列表';
-    if (ai_parsed && ai_parsed.action) {
-        intentStr = `解析动作: ${ai_parsed.action}`;
-        text += `${intentStr}\n`;
+    if (r.action) text += `解析动作: ${r.action}\n`;
+    
+    if (r.taskCount === 0) {
+        text += `\n没有找到符合条件的任务。`;
+    } else if (r.singleTaskUrl) {
+        text += `\n成功查询到 1 个任务。\n${r.singleTaskUrl}`;
+    } else if (r.listUrl) {
+        text += `\n成功查询到 ${r.taskCount} 个任务。\n${r.listUrl}`;
+    } else if (r.taskTitle) {
+        text += `\n任务: ${r.taskTitle}`;
+        if (r.taskId) text += `\nTask ID: ${r.taskId}`;
+        if (r.message) text += `\n${r.message}`;
+        if (r.dueDate) text += `\n📅 截止: ${r.dueDate}`;
+        if (r.remindAt) text += `\n⏰ 提醒: ${r.remindAt}`;
+        if (r.viewUrl) text += `\n\n${r.viewUrl}`;
     }
-
-    if (data && Array.isArray(data)) {
-        if (data.length === 0) {
-            text += `\n没有找到符合条件的任务。`;
-        } else if (data.length === 1) {
-            text += `\n成功查询到 1 个任务。\n`;
-            let url = data[0].view_url;
-            if (!url && data[0].id) {
-                url = await createShareUrl(c, data[0].id);
-            }
-            if (url) {
-                text += `${url}`;
-            } else {
-                text += `- ${data[0].title} [${data[0].status === 'completed' ? '已完成' : '待办'}]`;
-            }
-        } else {
-            const listUrl = await createListUrl(c, data, intentStr);
-            text += `\n成功查询到 ${data.length} 个任务。\n${listUrl}`;
-        }
-    } else if (data && typeof data === 'object') {
-        if (data.title) text += `\n任务: ${data.title}`;
-        if (data.id) text += `\nTask ID: ${data.id}`;
-        if (data.message) text += `\n${data.message}`;
-        if (data.due_date) text += `\n📅 截止: ${data.due_date}`;
-        if (data.remind_at) text += `\n⏰ 提醒: ${data.remind_at}`;
-        if (data.view_url) text += `\n\n${data.view_url}`;
-    } else if (data) {
-        text += `\n结果: ${String(data)}`;
-    }
-
+    
     return text;
 }
 
@@ -181,9 +163,7 @@ app.post('/', async (c) => {
             const userTimezone = c.env.USER_TIMEZONE || 'Asia/Shanghai';
             const trimmedText = userText.trim();
             
-            const commandMatch = trimmedText.match(/^\/([^\s@]+)(?:@\S+)?(?:\s+([\s\S]*))?$/);
-            const cmdName = commandMatch ? commandMatch[1].toLowerCase() : null;
-            const cmdArgs = commandMatch ? commandMatch[2] : null;
+            const { name: cmdName, args: cmdArgs } = parseCommand(trimmedText);
 
             const tenantAccessToken = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
             if (!tenantAccessToken) {
@@ -278,11 +258,7 @@ app.post('/', async (c) => {
                     }
 
                     const replyText = await formatFeishuResponse(c, aiResult);
-                    const elapsed = Date.now() - startTime;
-                    if (elapsed > 60000) {
-                        console.warn(`[Feishu Webhook] AI response expired due to Isolate suspension (${elapsed}ms). Dropping message.`);
-                        return;
-                    }
+                    if (isResponseExpired(startTime)) return;
                     await sendFeishuMessage(tenantAccessToken, receiveId, replyText, receiveIdType, 'text');
 
                 } catch (e: any) {

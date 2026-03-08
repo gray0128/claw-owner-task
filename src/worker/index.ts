@@ -11,7 +11,7 @@ import { tagHandlers } from './handlers/tags';
 import { remindHandlers } from './handlers/remind';
 import { logsHandlers } from './handlers/logs';
 import { telegramHandlers } from './handlers/telegram';
-import { qqHandlers } from './handlers/qqbot';
+
 import { feishuHandlers } from './handlers/feishu';
 import { authSummaryHandlers, publicSummaryHandlers } from './handlers/summary';
 import { publicShareHandlers } from './handlers/share';
@@ -27,9 +27,7 @@ export type Bindings = {
   BARK_URL?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
-  QQ_APP_ID?: string;
-  QQ_APP_SECRET?: string;
-  QQ_ALLOWED_OPENID?: string;
+
   FEISHU_APP_ID?: string;
   FEISHU_APP_SECRET?: string;
   FEISHU_VERIFY_TOKEN?: string;
@@ -63,8 +61,7 @@ app.route('/list', publicListHandlers);
 // Telegram Webhook is public and handles its own auth via Chat ID and Telegram Token
 app.route('/api/webhook/telegram', telegramHandlers);
 
-// QQ Bot Webhook
-app.route('/api/webhook/qq', qqHandlers);
+
 
 // Feishu Bot Webhook
 app.route('/api/webhook/feishu', feishuHandlers);

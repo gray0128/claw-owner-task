@@ -1,4 +1,4 @@
-export async function sendBarkNotification(barkUrl: string, title: string, body: string): Promise<{ success: boolean, payload?: string }> {
+export async function sendBarkNotification(barkUrl: string, title: string, body: string, linkUrl?: string): Promise<{ success: boolean, payload?: string }> {
   if (!barkUrl) {
     console.warn('Bark URL is not configured.');
     return { success: false };
@@ -12,6 +12,9 @@ export async function sendBarkNotification(barkUrl: string, title: string, body:
 
     // Construct the endpoint URL safely encoding title and body
     endpoint = `${baseUrl}${encodeURIComponent(title)}/${encodeURIComponent(body)}`;
+    if (linkUrl) {
+      endpoint += `?url=${encodeURIComponent(linkUrl)}`;
+    }
 
     const response = await fetch(endpoint, {
       method: 'GET',

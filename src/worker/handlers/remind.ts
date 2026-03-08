@@ -2,11 +2,11 @@ import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { sendBarkNotification } from '../services/bark';
 import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
-import { getQQAccessToken, sendQQNotification } from '../services/qqbot';
+
 import { calculateNextFutureRemindAt } from '../services/recurrence';
+import { apiResponse as response } from '../utils';
 
 const app = new Hono<{ Bindings: Bindings }>();
-const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
 
 app.post('/check', async (c) => {
   const channel = c.req.query('channel'); // 'cloud' | 'agent'
@@ -78,31 +78,13 @@ app.post('/check', async (c) => {
         if (tSuccess) pushSuccess = true;
       }
 
-      // QQ Push
-      const qqAppId = c.env.QQ_APP_ID || '';
-      const qqAppSecret = c.env.QQ_APP_SECRET || '';
-      const qqOpenid = c.env.QQ_ALLOWED_OPENID || '';
-      if (qqAppId && qqAppSecret && qqOpenid) {
-        let qSuccess = false;
-        try {
-          const accessToken = await getQQAccessToken(qqAppId, qqAppSecret);
-          if (accessToken) {
-            const qText = `任务提醒: ${task.title}\n\n${task.description || '到期了，快去看看吧！'}`;
-            const { success } = await sendQQNotification(accessToken, qqOpenid, qText);
-            qSuccess = success;
-          }
-        } catch (error) {
-          console.error(`[Remind] QQ push error for task ${task.id}:`, error);
-        }
-        console.log(`[Remind] QQ push for task ${task.id}: success=${qSuccess}`);
-        if (qSuccess) pushSuccess = true;
-      }
+
 
       // If no channels configured, we still might want to flip to avoid indefinite looping?
       // For now, if pushSuccess is true, we update DB.
       // Wait, if BOTH bark and telegram are not configured, pushSuccess is false, task will stay in remind loop forever.
       // Let's ensure that if neither is configured, we consider it a success just to move the task along.
-      const noChannelsConfigured = !barkUrl && (!telegramToken || !telegramChatId) && (!qqAppId || !qqAppSecret || !qqOpenid);
+      const noChannelsConfigured = !barkUrl && (!telegramToken || !telegramChatId);
       if (noChannelsConfigured) {
         console.warn(`[Remind] No push channels configured for cloud. Simulating success.`);
         pushSuccess = true;

@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
+import { apiResponse as response } from '../utils';
 
 const app = new Hono<{ Bindings: Bindings }>();
-const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
 
 app.get('/bark', async (c) => {
     const limitStr = c.req.query('limit') || '5';

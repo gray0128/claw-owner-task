@@ -1,7 +1,9 @@
 import { Hono } from "hono";
-import { html } from "hono/html";
+import { html, raw } from "hono/html";
 import { Bindings } from "../index";
 import { getAppBaseUrl } from "../utils";
+import { errorPageHtml } from "../templates/components";
+import { BASE_CSS_VARS, BASE_STYLES, GOOGLE_FONTS_LINK, materialIconsLink } from "../templates/styles";
 
 export const publicShareHandlers = new Hono<{ Bindings: Bindings }>();
 // Helper: Get or create share URLs for a list of tasks
@@ -102,11 +104,11 @@ publicShareHandlers.get("/:uuid", async (c) => {
 
   if (!share) {
     return c.html(
-      errorPage(
+      errorPageHtml(
         "链接已失效或不存在",
-        "该分享链接可能已超过 24 小时有效期，或已被撤销。",
+        "该分享链接可能已超过 24 小时有效期，或已被撤销。"
       ),
-      404,
+      404
     );
   }
 
@@ -127,7 +129,7 @@ publicShareHandlers.get("/:uuid", async (c) => {
     .bind(share.task_id)
     .first();
   if (!task) {
-    return c.html(errorPage("任务不存在", "该任务可能已被删除。"), 404);
+    return c.html(errorPageHtml("任务不存在", "该任务可能已被删除。"), 404);
   }
 
   // 3. Render HTML
@@ -144,35 +146,11 @@ publicShareHandlers.get("/:uuid", async (c) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${task.title} - 任务详情</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=alarm,autorenew,bolt,calendar_today,folder,schedule,tag" rel="stylesheet">
+        ${raw(GOOGLE_FONTS_LINK)}
+        ${raw(materialIconsLink(['alarm', 'autorenew', 'bolt', 'calendar_today', 'folder', 'schedule', 'tag']))}
         <style>
-          :root {
-            --primary: #7c3aed;
-            --primary-light: #a78bfa;
-            --primary-dark: #5b21b6;
-            --bg: #f5f3ff;
-            --surface: #ffffff;
-            --text: #1e1b4b;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --radius: 16px;
-            --green: #10b981;
-            --amber: #f59e0b;
-            --red: #ef4444;
-          }
-          * { box-sizing: border-box; }
-          body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-          }
+          ${raw(BASE_CSS_VARS)}
+          ${raw(BASE_STYLES)}
           .wrapper { max-width: 680px; margin: 40px auto; padding: 0 20px; animation: fadeInUp 0.5s ease-out; }
           @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(16px); }
@@ -432,30 +410,3 @@ publicShareHandlers.get("/:uuid", async (c) => {
   `);
 });
 
-function errorPage(title: string, message: string) {
-  return html`
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>${title}</title>
-        <style>
-          :root { --bg: #fafafa; --surface: #ffffff; --text: #171717; --text-muted: #737373; --border: #e5e5e5; }
-          body { font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; -webkit-font-smoothing: antialiased; }
-          .card { background: var(--surface); padding: 40px; border-radius: 12px; box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.02); border: 1px solid var(--border); text-align: center; max-width: 400px; width: 100%; margin: 20px; }
-          h1 { color: #dc2626; margin: 0 0 12px 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
-          p { color: var(--text-muted); line-height: 1.6; margin: 0 0 24px 0; font-size: 15px; }
-          .brand { font-size: 12px; font-weight: 600; color: #d4d4d4; letter-spacing: 0.05em; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h1>${title}</h1>
-          <p>${message}</p>
-          <div class="brand">CLAW TASK</div>
-        </div>
-      </body>
-    </html>
-  `;
-}

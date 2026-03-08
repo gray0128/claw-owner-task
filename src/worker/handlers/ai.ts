@@ -1,11 +1,9 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
 import { taskHandlers } from './tasks';
+import { apiResponse as response, extractAIContent } from '../utils';
 
 const app = new Hono<{ Bindings: Bindings }>();
-
-// Helper to format response
-const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
 
 const WHITELIST = ['create', 'update', 'query', 'complete'];
 
@@ -149,18 +147,7 @@ Important Instructions:
     });
 
     // Handle different response structures
-    let rawContent = '';
-    if (typeof aiResponse === 'string') {
-        rawContent = aiResponse;
-    } else if (aiResponse.choices && aiResponse.choices[0] && aiResponse.choices[0].message) {
-        rawContent = aiResponse.choices[0].message.content;
-    } else if (aiResponse.response) {
-        rawContent = aiResponse.response;
-    } else if (aiResponse.result && aiResponse.result.response) {
-        rawContent = aiResponse.result.response;
-    } else {
-        rawContent = JSON.stringify(aiResponse);
-    }
+    let rawContent = extractAIContent(aiResponse);
 
     const result = tryParseJson(rawContent);
 

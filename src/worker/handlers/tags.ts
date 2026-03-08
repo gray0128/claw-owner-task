@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
+import { apiResponse as response } from '../utils';
 
 const app = new Hono<{ Bindings: Bindings }>();
-const response = (success: boolean, data: any, error: any = null) => ({ success, data, error });
 
 app.get('/', async (c) => {
   const { results } = await c.env.DB.prepare('SELECT * FROM tags ORDER BY created_at DESC').all();
