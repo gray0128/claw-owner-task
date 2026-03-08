@@ -16,6 +16,10 @@ ENABLE_AI = true
 CRON_SUMMARY_TIME = "09:00,21:00" # 定时总结时间点，多个用逗号分隔 (HH:mm)
 BASE_URL = "https://claw-task.bobocai.win" # 你的自定义域名 (例如 "https://your-custom-domain.com")，用于生成链接
 
+[[routes]]
+pattern = "claw-task.bobocai.win"
+custom_domain = true
+
 
 # QQ Bot Configuration (Fill in your values)
 # QQ_APP_ID = "YOUR_APP_ID"
