@@ -99,6 +99,7 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=autorenew,folder,warning" rel="stylesheet">
       <style>
         :root {
           --primary: #7c3aed;
@@ -345,8 +346,8 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
                   <div class="task-title-row">
                     <span class="task-id">#${t.id}</span>
                     <span class="task-name">${t.title}</span>
-                    ${t.category ? `<span class="task-time" style="background: #e0e7ff; color: #3730a3;">📂 ${t.category}</span>` : ''}
-                    ${t.recurring_rule && t.recurring_rule !== 'none' ? `<span class="task-time" style="background: #ede9fe; color: #5b21b6;">🔄 ${t.recurring_rule === 'daily' ? '每天' : t.recurring_rule === 'weekly' ? '每周' : t.recurring_rule === 'monthly' ? '每月' : t.recurring_rule}</span>` : ''}
+                    ${t.category ? `<span class="task-time" style="background: #e0e7ff; color: #3730a3;"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:2px;">folder</span>${t.category}</span>` : ''}
+                    ${t.recurring_rule && t.recurring_rule !== 'none' ? `<span class="task-time" style="background: #ede9fe; color: #5b21b6;"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:2px;">autorenew</span>${t.recurring_rule === 'daily' ? '每天' : t.recurring_rule === 'weekly' ? '每周' : t.recurring_rule === 'monthly' ? '每月' : t.recurring_rule}</span>` : ''}
                     ${t.created_at ? `<span class="task-time">${new Date(t.created_at + "Z").toLocaleString('zh-CN', { hour12: false })}</span>` : ''}
                   </div>
                   ${t.reason ? `<p class="task-desc">${t.reason}</p>` : ''}
@@ -357,15 +358,15 @@ publicSummaryHandlers.get('/:uuid', async (c) => {
 
           ${summaryData.warnings && summaryData.warnings.length > 0 ? `
           <div class="card">
-            <h2 class="card-title">⚠ 风险警告 Warnings</h2>
+            <h2 class="card-title"><span class="material-symbols-outlined" style="font-size:20px;vertical-align:middle;margin-right:4px;color:var(--red);">warning</span>风险警告 Warnings</h2>
             <ul class="task-list">
               ${summaryData.warnings.map((w: any) => `
                 <li class="task-item warning">
                   <div class="task-title-row">
                     <span class="task-id" style="color: var(--red);">#${w.id}</span>
                     <span class="task-name">${w.title}</span>
-                    ${w.category ? `<span class="task-time" style="background: #e0e7ff; color: #3730a3;">📂 ${w.category}</span>` : ''}
-                    ${w.recurring_rule && w.recurring_rule !== 'none' ? `<span class="task-time" style="background: #ede9fe; color: #5b21b6;">🔄 ${w.recurring_rule === 'daily' ? '每天' : w.recurring_rule === 'weekly' ? '每周' : w.recurring_rule === 'monthly' ? '每月' : w.recurring_rule}</span>` : ''}
+                    ${w.category ? `<span class="task-time" style="background: #e0e7ff; color: #3730a3;"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:2px;">folder</span>${w.category}</span>` : ''}
+                    ${w.recurring_rule && w.recurring_rule !== 'none' ? `<span class="task-time" style="background: #ede9fe; color: #5b21b6;"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:2px;">autorenew</span>${w.recurring_rule === 'daily' ? '每天' : w.recurring_rule === 'weekly' ? '每周' : w.recurring_rule === 'monthly' ? '每月' : w.recurring_rule}</span>` : ''}
                     ${w.created_at ? `<span class="task-time">${new Date(w.created_at + "Z").toLocaleString('zh-CN', { hour12: false })}</span>` : ''}
                   </div>
                   <p class="task-desc">${w.suggestion}</p>

@@ -74,6 +74,7 @@ publicListHandlers.get("/:uuid", async (c) => {
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=alarm,autorenew,calendar_today,schedule" rel="stylesheet">
         <style>
           :root {
             --primary: #7c3aed;
@@ -220,7 +221,7 @@ publicListHandlers.get("/:uuid", async (c) => {
             color: var(--text-muted);
           }
           .meta-item { display: flex; align-items: center; gap: 5px; }
-          .meta-icon { font-size: 13px; opacity: 0.7; }
+          .meta-icon { font-family: 'Material Symbols Outlined'; font-size: 18px; opacity: 0.6; color: var(--primary); font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
           .meta-item strong { font-weight: 600; color: #374151; }
 
           .empty-state {
@@ -289,14 +290,14 @@ publicListHandlers.get("/:uuid", async (c) => {
                     <span class="badge badge-status-${task.status}">${statusLabel}</span>
                     ${task.priority ? html`<span class="badge badge-priority-${task.priority}">${task.priority}</span>` : ""}
                     ${task.category_name ? html`<span class="badge badge-category">${task.category_name}</span>` : ""}
-                    ${task.recurring_rule && task.recurring_rule !== 'none' ? html`<span class="badge" style="background: #ede9fe; color: #5b21b6;">🔄 ${task.recurring_rule === 'daily' ? '每天' : task.recurring_rule === 'weekly' ? '每周' : task.recurring_rule === 'monthly' ? '每月' : task.recurring_rule}</span>` : ""}
+                    ${task.recurring_rule && task.recurring_rule !== 'none' ? html`<span class="badge" style="background: #ede9fe; color: #5b21b6;"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:2px;">autorenew</span>${task.recurring_rule === 'daily' ? '每天' : task.recurring_rule === 'weekly' ? '每周' : task.recurring_rule === 'monthly' ? '每月' : task.recurring_rule}</span>` : ""}
                     ${tags.map((t: any) => html`<span class="badge badge-tag">#${t.name || t}</span>`)}
                   </div>
                   
                   <div class="task-meta">
-                    ${task.created_at ? html`<div class="meta-item"><span class="meta-icon">🕒</span><span>创建:</span> <strong>${new Date(task.created_at + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
-                    ${task.due_date ? html`<div class="meta-item"><span class="meta-icon">📅</span><span>截止:</span> <strong>${new Date(task.due_date + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
-                    ${task.remind_at ? html`<div class="meta-item"><span class="meta-icon">⏰</span><span>提醒:</span> <strong>${new Date(task.remind_at + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
+                    ${task.created_at ? html`<div class="meta-item"><span class="meta-icon">schedule</span><span>创建:</span> <strong>${new Date(task.created_at + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
+                    ${task.due_date ? html`<div class="meta-item"><span class="meta-icon">calendar_today</span><span>截止:</span> <strong>${new Date(task.due_date + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
+                    ${task.remind_at ? html`<div class="meta-item"><span class="meta-icon">alarm</span><span>提醒:</span> <strong>${new Date(task.remind_at + "Z").toLocaleString("zh-CN", { hour12: false })}</strong></div>` : ""}
                   </div>
                 </div>
               `;

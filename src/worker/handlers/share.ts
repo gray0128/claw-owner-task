@@ -147,6 +147,7 @@ publicShareHandlers.get("/:uuid", async (c) => {
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=alarm,autorenew,bolt,calendar_today,folder,schedule,tag" rel="stylesheet">
         <style>
           :root {
             --primary: #7c3aed;
@@ -255,7 +256,7 @@ publicShareHandlers.get("/:uuid", async (c) => {
           }
           .meta-row:last-child { border-bottom: none; }
           .meta-row:hover { background: #f5f5f5; }
-          .meta-icon { font-size: 15px; width: 28px; flex-shrink: 0; opacity: 0.7; }
+          .meta-icon { font-family: 'Material Symbols Outlined'; font-size: 20px; width: 28px; flex-shrink: 0; opacity: 0.6; color: var(--primary); font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
           .meta-label {
             font-size: 13px;
             font-weight: 500;
@@ -370,41 +371,41 @@ publicShareHandlers.get("/:uuid", async (c) => {
               
               <div class="meta-section">
                 <div class="meta-row">
-                  <span class="meta-icon">🆔</span>
+                  <span class="meta-icon">tag</span>
                   <span class="meta-label">任务 ID</span>
                   <span class="meta-value">#${task.id}</span>
                 </div>
                 <div class="meta-row">
-                  <span class="meta-icon">🕒</span>
+                  <span class="meta-icon">schedule</span>
                   <span class="meta-label">创建时间</span>
                   <span class="meta-value">${new Date(task.created_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
                 </div>
                 <div class="meta-row">
-                  <span class="meta-icon">⚡</span>
+                  <span class="meta-icon">bolt</span>
                   <span class="meta-label">优先级</span>
                   <span class="meta-value"><span class="priority-pill priority-${task.priority}">${task.priority.toUpperCase()}</span></span>
                 </div>
                 ${task.category_name ? html`
                 <div class="meta-row">
-                  <span class="meta-icon">📂</span>
+                  <span class="meta-icon">folder</span>
                   <span class="meta-label">分类</span>
                   <span class="meta-value" style="color: ${task.category_color || 'inherit'}">${task.category_name}</span>
                 </div>` : ""}
                 ${task.due_date ? html`
                 <div class="meta-row">
-                  <span class="meta-icon">📅</span>
+                  <span class="meta-icon">calendar_today</span>
                   <span class="meta-label">截止日期</span>
                   <span class="meta-value">${new Date(task.due_date + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
                 </div>` : ""}
                 ${task.remind_at ? html`
                 <div class="meta-row">
-                  <span class="meta-icon">⏰</span>
+                  <span class="meta-icon">alarm</span>
                   <span class="meta-label">提醒时间</span>
                   <span class="meta-value">${new Date(task.remind_at + "Z").toLocaleString("zh-CN", { hour12: false })}</span>
                 </div>` : ""}
                 ${task.recurring_rule && task.recurring_rule !== 'none' ? html`
                 <div class="meta-row">
-                  <span class="meta-icon">🔄</span>
+                  <span class="meta-icon">autorenew</span>
                   <span class="meta-label">重复规则</span>
                   <span class="meta-value"><span class="priority-pill" style="background: #ede9fe; color: #5b21b6;">${task.recurring_rule === 'daily' ? '每天' : task.recurring_rule === 'weekly' ? '每周' : task.recurring_rule === 'monthly' ? '每月' : task.recurring_rule}</span></span>
                 </div>` : ""}
