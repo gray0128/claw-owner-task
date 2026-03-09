@@ -20,6 +20,7 @@ import { publicListHandlers } from './handlers/list';
 
 export type Bindings = {
   DB: D1Database;
+  AUDIO_BUCKET: R2Bucket;
   AI: any;
   ENABLE_AI: string | boolean;
   TASK_API_KEY: string;

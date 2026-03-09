@@ -64,7 +64,7 @@ export async function submitAsrTask(audioUrl: string, config: AsrConfig): Promis
   return requestId;
 }
 
-export async function pollAsrResult(requestId: string, config: AsrConfig, maxRetries = 30, intervalMs = 2000): Promise<string> {
+export async function pollAsrResult(requestId: string, config: AsrConfig, maxRetries = 40, intervalMs = 1500): Promise<string> {
   const headers = buildHeaders(config, requestId);
   const host = config.apiHost || DEFAULT_HOST;
 

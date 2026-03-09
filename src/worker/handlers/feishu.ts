@@ -3,7 +3,7 @@ import { Bindings } from '../index';
 import { aiHandlers } from './ai';
 import { taskHandlers } from './tasks';
 import { authSummaryHandlers } from './summary';
-import { getTenantAccessToken, sendFeishuMessage, verifyFeishuSignature, decryptFeishuEvent } from '../services/feishu';
+import { getTenantAccessToken, sendFeishuMessage, verifyFeishuSignature, decryptFeishuEvent, fetchFeishuResource } from '../services/feishu';
 import { createListUrl } from './list';
 import { createShareUrl } from './share';
 import { parseCommand, extractResult, isResponseExpired } from './bot-shared';
@@ -129,107 +129,108 @@ app.post('/', async (c) => {
                 receiveIdType = 'open_id';
             }
 
-            // Extract text from JSON string content
-            let userText = '';
-            
-            if (message.message_type === 'audio') {
-                try {
-                    const contentObj = JSON.parse(message.content);
-                    const fileKey = contentObj.file_key;
-                    if (fileKey) {
-                        const messageId = message.message_id;
-                        
-                        // Construct proxy URL
-                        const taskApiKey = c.env.TASK_API_KEY;
-                        const contentToSign = messageId + fileKey;
-                        const msgBuffer = new TextEncoder().encode(contentToSign + taskApiKey);
-                        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-                        const hashArray = Array.from(new Uint8Array(hashBuffer));
-                        const calculatedSig = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                        
-                        const publicUrl = new URL(c.req.url);
-                        const baseUrl = c.env.BASE_URL || `${publicUrl.protocol}//${publicUrl.host}`;
-                        const proxyUrl = `${baseUrl.replace(/\/$/, '')}/api/proxy/audio/feishu/${messageId}/${fileKey}/${calculatedSig}.ogg`;
-                        
-                        const { processAudioToText } = await import('../services/asr');
-                        
-                        const tenantAccessToken = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
-                        if (tenantAccessToken) {
-                             await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在识别语音...', receiveIdType, 'text');
-                        }
-
-                        const volcApiKey = c.env.VOLC_API_KEY;
-                        if (!volcApiKey) {
-                             throw new Error('VOLC_API_KEY is not configured');
-                        }
-
-                        const asrText = await processAudioToText(proxyUrl, { apiKey: volcApiKey, apiHost: c.env.VOLC_API_HOST });
-                        if (!asrText || asrText.includes('静音')) {
-                            if (tenantAccessToken) {
-                                await sendFeishuMessage(tenantAccessToken, receiveId, `⚠️ 语音似乎是静音或未识别出文字。`, receiveIdType, 'text');
-                            }
-                            return c.json({code: 0});
-                        }
-                        userText = `[语音转写]: ${asrText}`;
-                    } else {
-                         throw new Error('No file_key found in audio message');
-                    }
-                } catch (e: any) {
-                    console.error('[Feishu Webhook] Audio process failed:', e);
-                    const tenantAccessToken = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
-                    if (tenantAccessToken) {
-                        await sendFeishuMessage(tenantAccessToken, receiveId, `⚠️ 语音识别失败，请尝试文字输入。\n(${e.message})`, receiveIdType, 'text');
-                    }
-                    return c.json({code: 0});
-                }
-            } else {
-                try {
-                    const contentObj = JSON.parse(message.content);
-                    userText = contentObj.text;
-                    // Remove @bot mentions from text
-                    if (message.mentions) {
-                        message.mentions.forEach((mention: any) => {
-                            userText = userText.replace(mention.key, '').trim();
-                        });
-                    }
-                } catch (e) {
-                    userText = message.content;
-                }
-            }
-
-            console.log(`[Feishu Webhook] Received message from ${receiveIdType} ${receiveId}: ${userText}`);
-
             // Access Control
             if (FEISHU_ALLOWED_CHAT_ID) {
                 const allowedChats = FEISHU_ALLOWED_CHAT_ID.split(',').map(id => id.trim());
                 if (!allowedChats.includes(message.chat_id) && !allowedChats.includes(event.sender?.sender_id?.open_id)) {
                     console.warn(`[Feishu Webhook] Unauthorized request from ${receiveId}`);
                     // Reply once
-                    const token = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
-                    if (token) {
-                        await sendFeishuMessage(token, receiveId, `🔐 鉴权失败\n此会话或群组不在授权名单中。`, receiveIdType, 'text');
-                    }
+                    c.executionCtx.waitUntil((async () => {
+                        const token = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
+                        if (token) {
+                            await sendFeishuMessage(token, receiveId, `🔐 鉴权失败\n此会话或群组不在授权名单中。`, receiveIdType, 'text');
+                        }
+                    })());
                     return c.json({code: 0});
                 }
             }
 
+            const publicUrl = new URL(c.req.url);
+            const baseUrl = c.env.BASE_URL || `${publicUrl.protocol}//${publicUrl.host}`;
+            const publicHost = publicUrl.host;
+            const publicProto = publicUrl.protocol.replace(':', '');
             const userTimezone = c.env.USER_TIMEZONE || 'Asia/Shanghai';
-            const trimmedText = userText.trim();
-            
-            const { name: cmdName, args: cmdArgs } = parseCommand(trimmedText);
 
-            const tenantAccessToken = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
-            if (!tenantAccessToken) {
-                console.error('[Feishu Webhook] Failed to get tenant access token');
-                return c.json({code: 0});
-            }
+            // Start background execution for everything else
+            c.executionCtx.waitUntil((async () => {
+                let userText = '';
+                const tenantAccessToken = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
+                if (!tenantAccessToken) {
+                    console.error('[Feishu Webhook] Failed to get tenant access token');
+                    return;
+                }
+                
+                if (message.message_type === 'audio') {
+                    try {
+                        const contentObj = JSON.parse(message.content);
+                        const fileKey = contentObj.file_key;
+                        if (fileKey) {
+                            const messageId = message.message_id;
+                            await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在识别语音...', receiveIdType, 'text');
 
-            if (cmdName === 'summary' || cmdName === '总结') {
-                const publicUrl = new URL(c.req.url);
-                const publicHost = publicUrl.host;
-                const publicProto = publicUrl.protocol.replace(':', '');
+                            // 1. Download audio from Feishu to ArrayBuffer
+                            const feishuRes = await fetchFeishuResource(tenantAccessToken, messageId, fileKey, 'audio');
+                            if (!feishuRes.ok) {
+                                throw new Error(`Failed to fetch resource from Feishu: ${feishuRes.status}`);
+                            }
+                            const arrayBuffer = await feishuRes.arrayBuffer();
 
-                c.executionCtx.waitUntil((async () => {
+                            // 2. Upload to R2 with UUID
+                            const hash = crypto.randomUUID().replace(/-/g, '');
+                            const objectKey = `audio/feishu-${messageId}-${hash}.ogg`;
+
+                            await c.env.AUDIO_BUCKET.put(objectKey, arrayBuffer, {
+                                httpMetadata: { contentType: 'audio/ogg' }
+                            });
+
+                            try {
+                                // 3. Construct proxy URL and call ASR
+                                const proxyUrl = `${baseUrl.replace(/\/$/, '')}/api/proxy/audio/feishu/${messageId}/${hash}.ogg`;
+                                const volcApiKey = c.env.VOLC_API_KEY;
+                                if (!volcApiKey) {
+                                     throw new Error('VOLC_API_KEY is not configured');
+                                }
+
+                                const { processAudioToText } = await import('../services/asr');
+                                const asrText = await processAudioToText(proxyUrl, { apiKey: volcApiKey, apiHost: c.env.VOLC_API_HOST });
+
+                                if (!asrText || asrText.includes('静音')) {
+                                    await sendFeishuMessage(tenantAccessToken, receiveId, `⚠️ 语音似乎是静音或未识别出文字。`, receiveIdType, 'text');
+                                    return; // stop execution for this message
+                                }
+                                userText = `[飞书语音转译]: ${asrText}`;
+                            } finally {
+                                // 4. Cleanup R2
+                                await c.env.AUDIO_BUCKET.delete(objectKey).catch(e => console.error('[Feishu] Failed to delete R2 temp file', e));
+                            }
+                        } else {
+                             throw new Error('No file_key found in audio message');
+                        }
+                    } catch (e: any) {
+                        console.error('[Feishu Webhook] Audio process failed:', e);
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `⚠️ 语音识别失败，请尝试文字输入。\n(${e.message})`, receiveIdType, 'text');
+                        return; // stop execution
+                    }
+                } else {
+                    try {
+                        const contentObj = JSON.parse(message.content);
+                        userText = contentObj.text;
+                        // Remove @bot mentions from text
+                        if (message.mentions) {
+                            message.mentions.forEach((mention: any) => {
+                                userText = userText.replace(mention.key, '').trim();
+                            });
+                        }
+                    } catch (e) {
+                        userText = message.content;
+                    }
+                }
+
+                console.log(`[Feishu Webhook] Received message from ${receiveIdType} ${receiveId}: ${userText}`);
+                const trimmedText = userText.trim();
+                const { name: cmdName, args: cmdArgs } = parseCommand(trimmedText);
+
+                if (cmdName === 'summary' || cmdName === '总结') {
                     await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在生成任务总结，请稍候...', receiveIdType, 'text');
                     try {
                         const summaryRes = await authSummaryHandlers.request('/?source=feishu', {
@@ -250,16 +251,14 @@ app.post('/', async (c) => {
                     } catch (err: any) {
                         await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令执行崩溃 (Summary)\n${err.message}`, receiveIdType, 'text');
                     }
-                })());
-                return c.json({code: 0});
-            } else if (cmdName === 'add' || cmdName === '添加') {
-                if (!cmdArgs || !cmdArgs.trim()) {
-                    c.executionCtx.waitUntil(sendFeishuMessage(tenantAccessToken, receiveId, `ℹ️ 使用说明\n请提供任务内容，例如：\n/add 买牛奶`, receiveIdType, 'text'));
-                    return c.json({code: 0});
-                }
+                    return;
+                } else if (cmdName === 'add' || cmdName === '添加') {
+                    if (!cmdArgs || !cmdArgs.trim()) {
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `ℹ️ 使用说明\n请提供任务内容，例如：\n/add 买牛奶`, receiveIdType, 'text');
+                        return;
+                    }
 
-                const title = cmdArgs.trim();
-                c.executionCtx.waitUntil((async () => {
+                    const title = cmdArgs.trim();
                     try {
                         const addRes = await taskHandlers.request('/', {
                             method: 'POST',
@@ -286,13 +285,11 @@ app.post('/', async (c) => {
                     } catch (err: any) {
                         await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令错误 (Add)\n${err.message}`, receiveIdType, 'text');
                     }
-                })());
-                return c.json({code: 0});
-            }
+                    return;
+                }
 
-            // AI Flow
-            const startTime = Date.now();
-            c.executionCtx.waitUntil((async () => {
+                // AI Flow
+                const startTime = Date.now();
                 try {
                     const aiRes = await aiHandlers.request('/', {
                         method: 'POST',

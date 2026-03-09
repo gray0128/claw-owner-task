@@ -59,3 +59,7 @@ invocation_logs = false
 enabled = false
 persist = true
 head_sampling_rate = 1
+
+[[r2_buckets]]
+binding = "AUDIO_BUCKET"
+bucket_name = "volcengine-asr"
