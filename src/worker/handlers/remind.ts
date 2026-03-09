@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import { Bindings } from '../index';
-import { sendBarkNotification } from '../services/bark';
-import { sendTelegramNotification, escapeTelegramHTML } from '../services/telegram';
+import { escapeTelegramHTML } from '../services/telegram';
 
 import { calculateNextFutureRemindAt } from '../services/recurrence';
 import { apiResponse as response } from '../utils';
+import { getOrCreateShareUrls } from './share';
+import { sendToAllChannels } from '../services/notify';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -32,59 +33,29 @@ app.post('/check', async (c) => {
   }
 
   if (channel === 'cloud') {
+    // Generate share URLs for all reminding tasks
+    const taskIds = results.map((t: any) => t.id);
+    const shareUrls = await getOrCreateShareUrls(c, taskIds);
+
     // Cloud trigger -> send to Bark and/or Telegram and mark as reminded, then log it
-    for (const task of results) {
-      let pushSuccess = false;
-      const payloads: string[] = [];
+    for (const t of results) {
+      const task = t as any;
+      const taskUrl = shareUrls[task.id];
 
-      // Bark Push
-      const barkUrl = c.env.BARK_URL || '';
-      if (barkUrl) {
-        let bSuccess = false;
-        try {
-          const { success, payload } = await sendBarkNotification(
-            barkUrl,
-            `任务提醒: ${task.title}`,
-            (task.description as string) || '到期了，快去看看吧！'
-          );
-          bSuccess = success;
-          if (success && payload) payloads.push(payload);
-        } catch (error) {
-          console.error(`[Remind] Bark push error for task ${task.id}:`, error);
-        }
-        console.log(`[Remind] Bark push for task ${task.id}: success=${bSuccess}`);
-        if (bSuccess) pushSuccess = true;
-      }
+      const { success: anySuccess, payloads } = await sendToAllChannels(c.env, {
+        title: `任务提醒: ${task.title}`,
+        plainText: `${task.description as string || '到期了，快去看看吧！'}${taskUrl ? `\n\n查看任务详情: ${taskUrl}` : ''}`,
+        htmlText: `<b>任务提醒: ${escapeTelegramHTML(task.title as string)}</b>\n\n${escapeTelegramHTML(task.description as string || '到期了，快去看看吧！')}${taskUrl ? `\n\n<a href="${taskUrl}">查看任务详情</a>` : ''}`,
+        linkUrl: taskUrl
+      }, 'cron');
 
-      // Telegram Push
-      const telegramToken = c.env.TELEGRAM_BOT_TOKEN || '';
-      const telegramChatId = c.env.TELEGRAM_CHAT_ID || '';
-      if (telegramToken && telegramChatId) {
-        let tSuccess = false;
-        try {
-          const tText = `<b>任务提醒: ${escapeTelegramHTML(task.title as string)}</b>\n\n${escapeTelegramHTML(task.description as string || '到期了，快去看看吧！')}`;
-          const { success, payload } = await sendTelegramNotification(
-            telegramToken,
-            telegramChatId,
-            tText,
-            'HTML'
-          );
-          tSuccess = success;
-          if (success && payload) payloads.push(payload);
-        } catch (error) {
-          console.error(`[Remind] Telegram push error for task ${task.id}:`, error);
-        }
-        console.log(`[Remind] Telegram push for task ${task.id}: success=${tSuccess}`);
-        if (tSuccess) pushSuccess = true;
-      }
-
-
+      let pushSuccess = anySuccess;
 
       // If no channels configured, we still might want to flip to avoid indefinite looping?
       // For now, if pushSuccess is true, we update DB.
       // Wait, if BOTH bark and telegram are not configured, pushSuccess is false, task will stay in remind loop forever.
       // Let's ensure that if neither is configured, we consider it a success just to move the task along.
-      const noChannelsConfigured = !barkUrl && (!telegramToken || !telegramChatId);
+      const noChannelsConfigured = !c.env.BARK_URL && (!c.env.TELEGRAM_BOT_TOKEN || !c.env.TELEGRAM_CHAT_ID) && (!c.env.FEISHU_APP_ID || !c.env.FEISHU_APP_SECRET || !c.env.FEISHU_ALLOWED_CHAT_ID);
       if (noChannelsConfigured) {
         console.warn(`[Remind] No push channels configured for cloud. Simulating success.`);
         pushSuccess = true;
