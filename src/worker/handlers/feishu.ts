@@ -169,9 +169,10 @@ app.post('/', async (c) => {
                             await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在识别语音...', receiveIdType, 'text');
 
                             // 1. Download audio from Feishu to ArrayBuffer
-                            const feishuRes = await fetchFeishuResource(tenantAccessToken, messageId, fileKey, 'audio');
+                            const feishuRes = await fetchFeishuResource(tenantAccessToken, messageId, fileKey, 'file');
                             if (!feishuRes.ok) {
-                                throw new Error(`Failed to fetch resource from Feishu: ${feishuRes.status}`);
+                                const errorText = await feishuRes.text();
+                                throw new Error(`Failed to fetch resource from Feishu: ${feishuRes.status} ${errorText}`);
                             }
                             const arrayBuffer = await feishuRes.arrayBuffer();
 
