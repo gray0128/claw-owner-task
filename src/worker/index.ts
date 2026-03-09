@@ -47,7 +47,7 @@ app.use('/api/*', authMiddleware);
 app.use('/api/*', timezoneMiddleware);
 
 // Exclude auth middleware for public webhooks & proxies
-app.route('/api/proxy/feishu-audio', audioProxyHandlers);
+app.route('/api/proxy/audio', audioProxyHandlers);
 
 // Routes
 app.route('/api/info', infoHandlers);

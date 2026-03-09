@@ -18,8 +18,8 @@ export async function authMiddleware(c: Context, next: Next) {
     return await next();
   }
 
-  // skip auth for feishu audio proxy (it has its own signature validation)
-  if (c.req.path === '/api/proxy/feishu-audio' || c.req.path.endsWith('/proxy/feishu-audio')) {
+  // skip auth for audio proxy (it has its own signature validation)
+  if (c.req.path.startsWith('/api/proxy/audio')) {
     return await next();
   }
 

@@ -74,13 +74,23 @@ app.post('/', async (c) => {
                     throw new Error('Failed to get voice file URL');
                 }
                 
+                // Construct proxy URL to bypass Volcengine network restrictions (China GFW)
+                const taskApiKey = c.env.TASK_API_KEY;
+                const msgBuffer = new TextEncoder().encode(fileId + taskApiKey);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const calculatedSig = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                const baseUrl = c.env.BASE_URL || `${new URL(c.req.url).origin}`;
+                const proxyUrl = `${baseUrl.replace(/\/$/, '')}/api/proxy/audio/telegram/${fileId}/${calculatedSig}.ogg`;
+                
                 const volcApiKey = c.env.VOLC_API_KEY;
                 if (!volcApiKey) {
                      throw new Error('VOLC_API_KEY is not configured');
                 }
                 
                 const { processAudioToText } = await import('../services/asr');
-                const asrText = await processAudioToText(voiceUrl, { apiKey: volcApiKey, apiHost: c.env.VOLC_API_HOST });
+                const asrText = await processAudioToText(proxyUrl, { apiKey: volcApiKey, apiHost: c.env.VOLC_API_HOST });
                 
                 if (!asrText || asrText.includes('静音')) {
                     await sendTelegramNotification(telegramToken, chatId, `⚠️ 语音似乎是静音或未识别出文字。`, 'HTML');

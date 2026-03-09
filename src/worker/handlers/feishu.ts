@@ -141,15 +141,15 @@ app.post('/', async (c) => {
                         
                         // Construct proxy URL
                         const taskApiKey = c.env.TASK_API_KEY;
-                        const contentToSign = messageId + fileKey + taskApiKey;
-                        const msgBuffer = new TextEncoder().encode(contentToSign);
+                        const contentToSign = messageId + fileKey;
+                        const msgBuffer = new TextEncoder().encode(contentToSign + taskApiKey);
                         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
                         const hashArray = Array.from(new Uint8Array(hashBuffer));
                         const calculatedSig = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                         
                         const publicUrl = new URL(c.req.url);
-                        // Using current request host to form proxy URL
-                        const proxyUrl = `${publicUrl.protocol}//${publicUrl.host}/api/proxy/feishu-audio?message_id=${messageId}&file_key=${fileKey}&sign=${calculatedSig}`;
+                        const baseUrl = c.env.BASE_URL || `${publicUrl.protocol}//${publicUrl.host}`;
+                        const proxyUrl = `${baseUrl.replace(/\/$/, '')}/api/proxy/audio/feishu/${messageId}/${fileKey}/${calculatedSig}.ogg`;
                         
                         const { processAudioToText } = await import('../services/asr');
                         
