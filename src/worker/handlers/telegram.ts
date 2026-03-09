@@ -57,9 +57,44 @@ app.post('/', async (c) => {
         return c.text('Invalid JSON', 400);
     }
 
-    if (body?.message?.text && body.message.chat?.id) {
-        const chatId = body.message.chat.id.toString();
-        const userText = body.message.text;
+    const message = body?.message;
+    if (message && (message.text || message.voice) && message.chat?.id) {
+        const chatId = message.chat.id.toString();
+        let userText = message.text || '';
+
+        if (message.voice) {
+            try {
+                const fileId = message.voice.file_id;
+                await sendTelegramNotification(telegramToken, chatId, `⏳ <b>正在识别语音...</b>`, 'HTML');
+                
+                const { getTelegramVoiceUrl } = await import('../services/telegram');
+                const voiceUrl = await getTelegramVoiceUrl(telegramToken, fileId);
+                
+                if (!voiceUrl) {
+                    throw new Error('Failed to get voice file URL');
+                }
+                
+                const volcApiKey = c.env.VOLC_API_KEY;
+                if (!volcApiKey) {
+                     throw new Error('VOLC_API_KEY is not configured');
+                }
+                
+                const { processAudioToText } = await import('../services/asr');
+                const asrText = await processAudioToText(voiceUrl, { apiKey: volcApiKey, apiHost: c.env.VOLC_API_HOST });
+                
+                if (!asrText || asrText.includes('静音')) {
+                    await sendTelegramNotification(telegramToken, chatId, `⚠️ 语音似乎是静音或未识别出文字。`, 'HTML');
+                    return c.text('OK');
+                }
+                
+                userText = `[语音转写]: ${asrText}`;
+            } catch (e: any) {
+                console.error('[Telegram Webhook] Voice process failed:', e);
+                await sendTelegramNotification(telegramToken, chatId, `⚠️ <b>语音识别失败，请尝试文字输入。</b>\n<pre>${escapeTelegramHTML(e.message)}</pre>`, 'HTML');
+                return c.text('OK');
+            }
+        }
+
         console.log(`[Telegram Webhook] Received message from ${chatId}: ${userText}`);
 
         // Authorization: only the allowed chat ID can interact with the bot

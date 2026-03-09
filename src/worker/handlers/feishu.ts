@@ -119,7 +119,7 @@ app.post('/', async (c) => {
         const event = bodyObj.event;
         const message = event.message;
 
-        if (message && message.message_type === 'text') {
+        if (message && (message.message_type === 'text' || message.message_type === 'audio')) {
             // Determine the correct receive ID and type
             let receiveId = message.chat_id;
             let receiveIdType: 'chat_id' | 'open_id' = 'chat_id';
@@ -131,17 +131,70 @@ app.post('/', async (c) => {
 
             // Extract text from JSON string content
             let userText = '';
-            try {
-                const contentObj = JSON.parse(message.content);
-                userText = contentObj.text;
-                // Remove @bot mentions from text
-                if (message.mentions) {
-                    message.mentions.forEach((mention: any) => {
-                        userText = userText.replace(mention.key, '').trim();
-                    });
+            
+            if (message.message_type === 'audio') {
+                try {
+                    const contentObj = JSON.parse(message.content);
+                    const fileKey = contentObj.file_key;
+                    if (fileKey) {
+                        const messageId = message.message_id;
+                        
+                        // Construct proxy URL
+                        const taskApiKey = c.env.TASK_API_KEY;
+                        const contentToSign = messageId + fileKey + taskApiKey;
+                        const msgBuffer = new TextEncoder().encode(contentToSign);
+                        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        const calculatedSig = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                        
+                        const publicUrl = new URL(c.req.url);
+                        // Using current request host to form proxy URL
+                        const proxyUrl = `${publicUrl.protocol}//${publicUrl.host}/api/proxy/feishu-audio?message_id=${messageId}&file_key=${fileKey}&sign=${calculatedSig}`;
+                        
+                        const { processAudioToText } = await import('../services/asr');
+                        
+                        const tenantAccessToken = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
+                        if (tenantAccessToken) {
+                             await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在识别语音...', receiveIdType, 'text');
+                        }
+
+                        const volcApiKey = c.env.VOLC_API_KEY;
+                        if (!volcApiKey) {
+                             throw new Error('VOLC_API_KEY is not configured');
+                        }
+
+                        const asrText = await processAudioToText(proxyUrl, { apiKey: volcApiKey, apiHost: c.env.VOLC_API_HOST });
+                        if (!asrText || asrText.includes('静音')) {
+                            if (tenantAccessToken) {
+                                await sendFeishuMessage(tenantAccessToken, receiveId, `⚠️ 语音似乎是静音或未识别出文字。`, receiveIdType, 'text');
+                            }
+                            return c.json({code: 0});
+                        }
+                        userText = `[语音转写]: ${asrText}`;
+                    } else {
+                         throw new Error('No file_key found in audio message');
+                    }
+                } catch (e: any) {
+                    console.error('[Feishu Webhook] Audio process failed:', e);
+                    const tenantAccessToken = await getTenantAccessToken(FEISHU_APP_ID, FEISHU_APP_SECRET);
+                    if (tenantAccessToken) {
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `⚠️ 语音识别失败，请尝试文字输入。\n(${e.message})`, receiveIdType, 'text');
+                    }
+                    return c.json({code: 0});
                 }
-            } catch (e) {
-                userText = message.content;
+            } else {
+                try {
+                    const contentObj = JSON.parse(message.content);
+                    userText = contentObj.text;
+                    // Remove @bot mentions from text
+                    if (message.mentions) {
+                        message.mentions.forEach((mention: any) => {
+                            userText = userText.replace(mention.key, '').trim();
+                        });
+                    }
+                } catch (e) {
+                    userText = message.content;
+                }
             }
 
             console.log(`[Feishu Webhook] Received message from ${receiveIdType} ${receiveId}: ${userText}`);

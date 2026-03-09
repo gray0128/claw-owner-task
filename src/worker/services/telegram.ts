@@ -58,3 +58,22 @@ export function escapeTelegramHTML(text: string): string {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 }
+
+/**
+ * Get public download URL for a Telegram voice/audio file.
+ */
+export async function getTelegramVoiceUrl(token: string, fileId: string): Promise<string | null> {
+    const url = `https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`;
+    try {
+        const response = await fetch(url);
+        const data: any = await response.json();
+        if (data.ok && data.result?.file_path) {
+            return `https://api.telegram.org/file/bot${token}/${data.result.file_path}`;
+        }
+        console.error('[Telegram] getFile failed:', data);
+        return null;
+    } catch (error) {
+        console.error('[Telegram] getFile request error:', error);
+        return null;
+    }
+}

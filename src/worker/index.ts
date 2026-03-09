@@ -13,6 +13,7 @@ import { logsHandlers } from './handlers/logs';
 import { telegramHandlers } from './handlers/telegram';
 
 import { feishuHandlers } from './handlers/feishu';
+import { audioProxyHandlers } from './handlers/audio-proxy';
 import { authSummaryHandlers, publicSummaryHandlers } from './handlers/summary';
 import { publicShareHandlers } from './handlers/share';
 import { publicListHandlers } from './handlers/list';
@@ -33,6 +34,8 @@ export type Bindings = {
   FEISHU_VERIFY_TOKEN?: string;
   FEISHU_ENCRYPT_KEY?: string;
   FEISHU_ALLOWED_CHAT_ID?: string;
+  VOLC_API_KEY?: string;
+  VOLC_API_HOST?: string;
   CRON_SUMMARY_TIME?: string; // Format: "HH:mm" in user timezone
 };
 
@@ -42,6 +45,9 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', cors());
 app.use('/api/*', authMiddleware);
 app.use('/api/*', timezoneMiddleware);
+
+// Exclude auth middleware for public webhooks & proxies
+app.route('/api/proxy/feishu-audio', audioProxyHandlers);
 
 // Routes
 app.route('/api/info', infoHandlers);

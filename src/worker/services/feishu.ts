@@ -140,3 +140,22 @@ export async function decryptFeishuEvent(encryptKey: string, encryptStr: string)
     return null;
   }
 }
+
+/**
+ * Fetch a resource (like an audio file) from Feishu.
+ */
+export async function fetchFeishuResource(
+  token: string,
+  messageId: string,
+  fileKey: string,
+  type: string
+): Promise<Response> {
+  const url = `https://open.feishu.cn/open-apis/im/v1/messages/${messageId}/resources/${fileKey}?type=${type}`;
+  
+  return await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+}
