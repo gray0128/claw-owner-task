@@ -34,10 +34,13 @@ async function formatTelegramResponse(c: any, aiResult: any): Promise<string> {
         if (r.dueDate) text += `\n📅 截止: ${escapeTelegramHTML(r.dueDate)}`;
         if (r.remindAt) text += `\n⏰ 提醒: ${escapeTelegramHTML(r.remindAt)}`;
         if (r.viewUrl) text += `\n\n${escapeTelegramHTML(r.viewUrl)}`;
+    } else {
+        if (r.taskId) text += `\nTask ID: ${r.taskId}`;
+        if (r.message) text += `\n${escapeTelegramHTML(r.message)}`;
+        if (r.viewUrl) text += `\n\n${escapeTelegramHTML(r.viewUrl)}`;
     }
-    
-    return text;
-}
+
+    return text;}
 
 app.post('/', async (c) => {
     const telegramToken = c.env.TELEGRAM_BOT_TOKEN;

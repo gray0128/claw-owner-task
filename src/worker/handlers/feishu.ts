@@ -34,10 +34,13 @@ async function formatFeishuResponse(c: any, aiResult: any): Promise<string> {
         if (r.dueDate) text += `\n📅 截止: ${r.dueDate}`;
         if (r.remindAt) text += `\n⏰ 提醒: ${r.remindAt}`;
         if (r.viewUrl) text += `\n\n${r.viewUrl}`;
+    } else {
+        if (r.taskId) text += `\nTask ID: ${r.taskId}`;
+        if (r.message) text += `\n${r.message}`;
+        if (r.viewUrl) text += `\n\n${r.viewUrl}`;
     }
-    
-    return text;
-}
+
+    return text;}
 
 app.post('/', async (c) => {
     const { FEISHU_APP_ID, FEISHU_APP_SECRET, FEISHU_VERIFY_TOKEN, FEISHU_ENCRYPT_KEY, FEISHU_ALLOWED_CHAT_ID } = c.env;
