@@ -107,6 +107,19 @@ npx wrangler secret put VOLC_API_KEY        # 火山引擎 API Key (用于处理
 | `BASE_URL` | 否 | `https://...` | 你的 Worker 自定义域名，用于生成各类 Web 网页卡片分享链接。**强烈建议配置**，否则分享的链接可能无法在公网被正常访问。 |
 | `VOLC_API_HOST` | 否 | `openspeech.volcengineapi.com` | 火山引擎语音识别接口 Host。默认即可，除非官方 API 域名变更。 |
 
+### 4. 自定义域名绑定 (可选)
+为了提供专业且固定的对外服务地址（用于 Webhook 配置和分享链接），你可以在 `wrangler.toml` 中配置自定义域名：
+```toml
+# 自定义域名绑定
+[[routes]]
+pattern = "claw-task.你的域名.com"
+custom_domain = true
+```
+**配置说明**：
+- 此配置会让 Cloudflare 自动为你创建 DNS 记录并配置 HTTPS 证书。
+- **前提条件**：你配置的主域名（如 `你的域名.com`）必须已经托管在你当前执行部署操作的 Cloudflare 账号下。
+- 绑定成功后，请同步将 `[vars]` 中的 `BASE_URL` 变量更新为 `https://claw-task.你的域名.com`。
+
 ---
 
 ## Telegram 机器人配置与使用
