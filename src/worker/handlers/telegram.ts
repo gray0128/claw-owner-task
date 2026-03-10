@@ -208,6 +208,49 @@ app.post('/', async (c) => {
                     await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令错误 (List)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
                 }
                 return;
+            } else if (cmdName?.startsWith('#')) {
+                const queryId = cmdName.substring(1);
+                if (!/^\d+$/.test(queryId)) {
+                    await sendTelegramNotification(telegramToken, chatId, `ℹ️ <b>任务 ID 格式错误</b>\n请提供有效的数字 ID，例如：\n<pre>/#71</pre>`, 'HTML');
+                    return;
+                }
+                await sendTelegramNotification(telegramToken, chatId, `⏳ <b>正在获取任务 #${queryId} 详情...</b>`, 'HTML');
+                try {
+                    const taskRes = await taskHandlers.request(`/?id=${queryId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                            'X-User-Timezone': userTimezone,
+                            'X-Forwarded-Host': publicHost,
+                            'X-Forwarded-Proto': publicProto
+                        }
+                    }, c.env);
+
+                    if (taskRes.ok) {
+                        const taskData: any = await taskRes.json();
+                        if (taskData.success && taskData.data && taskData.data.length > 0) {
+                            const task = taskData.data[0];
+                            const shareUrl = await createShareUrl(c, task.id);
+                            let text = `✅ <b>查询成功</b>\n\n任务: <b>${escapeTelegramHTML(task.title)}</b>\nTask ID: ${task.id}`;
+                            if (task.description) text += `\n${escapeTelegramHTML(task.description)}`;
+                            if (task.due_date) text += `\n📅 截止: ${escapeTelegramHTML(task.due_date)}`;
+                            if (task.remind_at) text += `\n⏰ 提醒: ${escapeTelegramHTML(task.remind_at)}`;
+                            text += `\n\n${escapeTelegramHTML(shareUrl)}`;
+                            
+                            await sendTelegramNotification(telegramToken, chatId, text, 'HTML');
+                        } else {
+                            await sendTelegramNotification(telegramToken, chatId, `❌ <b>未找到任务 #${queryId}</b>`, 'HTML');
+                        }
+                    } else {
+                        const errorText = await taskRes.text();
+                        console.error('[Telegram] Query task command failed:', errorText);
+                        await sendTelegramNotification(telegramToken, chatId, `❌ <b>查询失败</b>\n<pre>${escapeTelegramHTML(errorText)}</pre>`, 'HTML');
+                    }
+                } catch (err: any) {
+                    console.error('[Telegram] Query task command exception:', err);
+                    await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令错误 (Query)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
+                }
+                return;
             } else if (cmdName === 'add' || cmdName === '添加') {
                 if (!cmdArgs || !cmdArgs.trim()) {
                     await sendTelegramNotification(telegramToken, chatId, `ℹ️ <b>使用说明</b>\n请提供任务内容，例如：\n<pre>/add 买牛奶</pre>`, 'HTML');

@@ -290,6 +290,47 @@ app.post('/', async (c) => {
                         await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令错误 (List)\n${err.message}`, receiveIdType, 'text');
                     }
                     return;
+                } else if (cmdName?.startsWith('#')) {
+                    const queryId = cmdName.substring(1);
+                    if (!/^\d+$/.test(queryId)) {
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `ℹ️ 任务 ID 格式错误\n请提供有效的数字 ID，例如：\n/#71`, receiveIdType, 'text');
+                        return;
+                    }
+                    await sendFeishuMessage(tenantAccessToken, receiveId, `⏳ 正在获取任务 #${queryId} 详情...`, receiveIdType, 'text');
+                    try {
+                        const taskRes = await taskHandlers.request(`/?id=${queryId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                                'X-User-Timezone': userTimezone,
+                                'X-Forwarded-Host': publicHost,
+                                'X-Forwarded-Proto': publicProto
+                            }
+                        }, c.env);
+
+                        if (taskRes.ok) {
+                            const taskData: any = await taskRes.json();
+                            if (taskData.success && taskData.data && taskData.data.length > 0) {
+                                const task = taskData.data[0];
+                                const shareUrl = await createShareUrl(c, task.id);
+                                let text = `✅ 查询成功\n\n任务: ${task.title}\nTask ID: ${task.id}`;
+                                if (task.description) text += `\n${task.description}`;
+                                if (task.due_date) text += `\n📅 截止: ${task.due_date}`;
+                                if (task.remind_at) text += `\n⏰ 提醒: ${task.remind_at}`;
+                                text += `\n\n${shareUrl}`;
+                                
+                                await sendFeishuMessage(tenantAccessToken, receiveId, text, receiveIdType, 'text');
+                            } else {
+                                await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 未找到任务 #${queryId}`, receiveIdType, 'text');
+                            }
+                        } else {
+                            const errorText = await taskRes.text();
+                            await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 查询失败\n${errorText}`, receiveIdType, 'text');
+                        }
+                    } catch (err: any) {
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令错误 (Query)\n${err.message}`, receiveIdType, 'text');
+                    }
+                    return;
                 } else if (cmdName === 'add' || cmdName === '添加') {
                     if (!cmdArgs || !cmdArgs.trim()) {
                         await sendFeishuMessage(tenantAccessToken, receiveId, `ℹ️ 使用说明\n请提供任务内容，例如：\n/add 买牛奶`, receiveIdType, 'text');
