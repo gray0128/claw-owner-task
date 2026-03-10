@@ -1,0 +1,66 @@
+name = "claw-owner-task"
+main = "src/worker/index.ts"
+compatibility_date = "2024-02-22"
+workers_dev = true
+
+# Static assets configuration
+[assets]
+directory = "src/web"
+
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "claw-owner-task-db"
+database_id = "41d719b2-4bb9-42b9-b0cd-59b15e7bfabf" # Database ID for claw-owner-task-db
+migrations_dir = "src/worker/db/migrations"
+
+# Environment Variables
+[vars]
+USER_TIMEZONE = "Asia/Shanghai"
+ENABLE_AI = true
+CRON_SUMMARY_TIME = "09:00,21:00" # 定时总结时间点，多个用逗号分隔 (HH:mm)
+BASE_URL = "https://claw-task.bobocai.win" # 你的自定义域名 (例如 "https://your-custom-domain.com")，用于生成链接
+
+# Optional: GitHub OAuth Configuration (for GitHub login feature)
+GITHUB_OAUTH_CLIENT_ID = "Ov23liXNVBLz3pchN3lR"
+GITHUB_OAUTH_REDIRECT_URI = "https://claw-task.bobocai.win/api/auth/github/callback"
+GITHUB_ALLOWED_USER_ID = "gray0128"
+# GITHUB_ALLOWED_USERNAME = "YOUR_GITHUB_USERNAME"
+
+# 自定义域名绑定 (可选)
+# 作用: 将你的独立域名绑定到该 Worker，Cloudflare 会自动接管 DNS 记录并配置 HTTPS。
+# 前提: pattern 中的主域名必须已经托管在你当前部署使用的 Cloudflare 账号下。
+[[routes]]
+pattern = "claw-task.bobocai.win"
+custom_domain = true
+
+[ai]
+binding = "AI"
+
+# Scheduled Tasks (Cron Triggers)
+# triggers every 1 minute for cloud bark notifications
+[triggers]
+crons = ["* * * * *"]
+
+[dev]
+port = 8787
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = false
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+
+[[r2_buckets]]
+binding = "AUDIO_BUCKET"
+bucket_name = "volcengine-asr"
