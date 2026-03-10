@@ -52,15 +52,23 @@ sudo claw-task upgrade
 
 ## 后端部署与云端配置 (Cloudflare)
 
-### 1. 数据库与部署流程
-1. **创建 D1 数据库**：
+### 1. 资源绑定配置 (Bindings)
+在 `wrangler.toml` 中，系统需要绑定以下 Cloudflare 资源：
+- **D1 Database** (`DB`): 存储所有任务、标签、配置及推送日志。需创建数据库 `claw-owner-task-db` 并填入 `database_id`。
+- **Workers AI** (`AI`): 核心 AI 语义解析引擎（基于 `@cf/qwen/qwen1.5-14b-chat-awq` 等模型）。
+- **R2 Bucket** (`AUDIO_BUCKET`): 暂存飞书、Telegram 等渠道发来的语音消息，并供火山引擎 ASR 引擎下载转译。需创建一个名为 `volcengine-asr` 的 R2 存储桶。
+
+1. **创建 D1 数据库并填入配置**：
    ```bash
    npx wrangler d1 create claw-owner-task-db
    ```
-2. **配置配置**：将输出的 `database_id` 填入 `wrangler.toml` 的对应字段。
-3. **初始化表结构**：
+2. **初始化表结构**：
    ```bash
    npm run db:migrate:remote
+   ```
+3. **创建 R2 存储桶**：
+   ```bash
+   npx wrangler r2 bucket create volcengine-asr
    ```
 4. **部署 Worker**：
    ```bash
@@ -68,20 +76,38 @@ sudo claw-task upgrade
    ```
 
 ### 2. 机密变量配置 (Secrets)
-机密变量需通过命令行设置，严禁写入配置文件：
+敏感凭证需通过命令行设置，**严禁写入配置文件**：
 ```bash
-npx wrangler secret put TASK_API_KEY      # 必填：API 访问授权码
-npx wrangler secret put BARK_URL          # 可选：Bark 推送网关地址
+# 核心系统配置
+npx wrangler secret put TASK_API_KEY        # 必填：API 访问授权码
+
+# 云端推送 (可选)
+npx wrangler secret put BARK_URL            # Bark 推送网关 (格式: https://api.day.app/your_key/)
+
+# Chatbots 与语音支持 (可选，按需配置)
+npx wrangler secret put TELEGRAM_BOT_TOKEN  # Telegram 机器人 API Token
+npx wrangler secret put TELEGRAM_CHAT_ID    # 唯一允许访问的 Telegram Chat ID
+npx wrangler secret put FEISHU_APP_ID       # 飞书自建应用 App ID
+npx wrangler secret put FEISHU_APP_SECRET   # 飞书自建应用 App Secret
+npx wrangler secret put QQ_APP_ID           # QQ 机器人 App ID
+npx wrangler secret put QQ_APP_SECRET       # QQ 机器人 App Secret
+npx wrangler secret put VOLC_API_KEY        # 火山引擎 API Key (用于处理语音消息)
 ```
 
 ### 3. 环境参数 (Vars)
-在 `wrangler.toml` 的 `[vars]` 块中定义：
+在 `wrangler.toml` 的 `[vars]` 块中定义，用于控制环境状态：
 
 | 参数名 | 默认值 | 说明 |
 | :--- | :--- | :--- |
 | `USER_TIMEZONE` | `Asia/Shanghai` | 服务端基准时区 |
 | `ENABLE_AI` | `true` | 是否启用 AI 语义解析 |
-| `CRON_SUMMARY_TIME` | 无 | 自动推送 AI 总结的时间点，如 `08:00,21:30` |
+| `CRON_SUMMARY_TIME` | `09:00,21:00` | 自动推送 AI 总结的时间点 (逗号分隔) |
+| `BASE_URL` | `https://...` | 你的 Worker 自定义域名，用于生成各类 Web 网页卡片分享链接 |
+| `VOLC_API_HOST` | `openspeech.volcengineapi.com` | 火山引擎语音识别接口 Host |
+| `FEISHU_VERIFY_TOKEN` | 无 | 飞书事件订阅 Verification Token |
+| `FEISHU_ENCRYPT_KEY` | 无 | 飞书事件订阅 Encrypt Key |
+| `FEISHU_ALLOWED_CHAT_ID`| 无 | 允许访问的飞书 Chat/Open ID（逗号分隔） |
+| `QQ_ALLOWED_OPENID`   | 无 | 允许访问的 QQ Open ID |
 
 ---
 
