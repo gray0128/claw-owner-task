@@ -1,7 +1,7 @@
 # Claw Owner Task
 
-**AI 优先的任务管理系统** —— 专为个人用户与 AI Agent (OpenCLaw) 设计。  
-依托 Cloudflare 生态提供全球加速的 API 服务，通过高性能 Rust CLI 和 Telegram 机器人实现无缝的任务管控。
+**AI 优先的任务管理系统** —— 专为个人用户与 AI Agent (ClaudeCode / GeminiCLI / OpenCode / OpenCLaw / NanoClaw 等) 设计。  
+依托 Cloudflare 生态提供全球加速的 API 服务，通过高性能 Rust CLI 和 Telegram/飞书 机器人实现无缝的任务管控。
 
 ---
 
@@ -55,7 +55,7 @@ sudo claw-task upgrade
 
 ### 1. 资源绑定配置 (Bindings)
 在 `wrangler.toml` 中，系统需要绑定以下 Cloudflare 资源：
-- **D1 Database** (`DB`): 存储所有任务、标签、配置及推送日志。需创建数据库 `claw-owner-task-db` 并填入 `database_id`。
+- **D1 Database** (`DB`): 存储所有任务、标签、配置及推送日志。需创建数据库 `claw-owner-task-db`，并将生成的 `database_id` 填入 `wrangler.toml` 对应的 `[[d1_databases]]` 块中。
 - **Workers AI** (`AI`): 核心 AI 语义解析引擎（基于 `@cf/qwen/qwen1.5-14b-chat-awq` 等模型）。
 - **R2 Bucket** (`AUDIO_BUCKET`): 暂存飞书、Telegram 等渠道发来的语音消息，并供火山引擎 ASR 引擎下载转译。需创建一个名为 `volcengine-asr` 的 R2 存储桶。
 
@@ -63,6 +63,7 @@ sudo claw-task upgrade
    ```bash
    npx wrangler d1 create claw-owner-task-db
    ```
+   *将终端输出的 `database_id` 复制并替换到 `wrangler.toml` 文件中的相应位置。*
 2. **初始化表结构**：
    ```bash
    npm run db:migrate:remote
