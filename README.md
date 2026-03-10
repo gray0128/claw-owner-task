@@ -90,6 +90,9 @@ npx wrangler secret put TELEGRAM_BOT_TOKEN  # Telegram 机器人 API Token
 npx wrangler secret put TELEGRAM_CHAT_ID    # 唯一允许访问的 Telegram Chat ID
 npx wrangler secret put FEISHU_APP_ID       # 飞书自建应用 App ID
 npx wrangler secret put FEISHU_APP_SECRET   # 飞书自建应用 App Secret
+npx wrangler secret put FEISHU_VERIFY_TOKEN # 飞书事件订阅 Verification Token (用于 Webhook 握手校验)
+npx wrangler secret put FEISHU_ENCRYPT_KEY  # 飞书事件订阅 Encrypt Key (用于推送消息的安全解密)
+npx wrangler secret put FEISHU_ALLOWED_CHAT_ID # 允许访问的飞书 Chat/Open ID（逗号分隔，安全白名单）
 npx wrangler secret put VOLC_API_KEY        # 火山引擎 API Key (用于处理语音消息)
 ```
 
@@ -103,9 +106,6 @@ npx wrangler secret put VOLC_API_KEY        # 火山引擎 API Key (用于处理
 | `CRON_SUMMARY_TIME` | 否 | `09:00,21:00` | 自动推送 AI 总结的时间点 (格式 `HH:mm`，支持逗号分隔多个)。若不需定时总结可置空。 |
 | `BASE_URL` | 否 | `https://...` | 你的 Worker 自定义域名，用于生成各类 Web 网页卡片分享链接。**强烈建议配置**，否则分享的链接可能无法在公网被正常访问。 |
 | `VOLC_API_HOST` | 否 | `openspeech.volcengineapi.com` | 火山引擎语音识别接口 Host。默认即可，除非官方 API 域名变更。 |
-| `FEISHU_VERIFY_TOKEN` | 否 | 无 | 飞书事件订阅 Verification Token。用于飞书 Webhook 握手校验 (若不启用飞书 bot 可忽略)。 |
-| `FEISHU_ENCRYPT_KEY` | 否 | 无 | 飞书事件订阅 Encrypt Key。用于飞书推送消息的安全解密 (若不启用飞书 bot 或未开启加密可忽略)。 |
-| `FEISHU_ALLOWED_CHAT_ID`| 否 | 无 | 允许访问的飞书 Chat/Open ID（支持逗号分隔多个）。作为极强的安全限制，未在白名单中的人或群发消息 bot 不予响应。 |
 
 ---
 

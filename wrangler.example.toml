@@ -25,11 +25,6 @@ CRON_SUMMARY_TIME = "09:00,21:00"
 # Optional: Base URL for web sharing links. Leave empty if you don't need sharing, or replace with your domain.
 BASE_URL = "" 
 
-# Feishu Bot Variables (Optional)
-# FEISHU_VERIFY_TOKEN = "YOUR_VERIFY_TOKEN"
-# FEISHU_ENCRYPT_KEY = "YOUR_ENCRYPT_KEY"
-# FEISHU_ALLOWED_CHAT_ID = "YOUR_ALLOWED_CHAT_ID"
-
 # -------------------------------------------------------------
 # Optional Custom Domain (Uncomment and replace to use your own domain)
 # [[routes]]
