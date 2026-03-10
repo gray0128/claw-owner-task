@@ -1,0 +1,69 @@
+name = "claw-owner-task"
+main = "src/worker/index.ts"
+compatibility_date = "2024-02-22"
+workers_dev = true
+
+# D1 Database binding
+# IMPORTANT: Replace database_id with your own D1 database ID after running: npx wrangler d1 create claw-owner-task-db
+[[d1_databases]]
+binding = "DB"
+database_name = "claw-owner-task-db"
+database_id = "your-database-id-here" 
+migrations_dir = "src/worker/db/migrations"
+
+# Environment Variables
+[vars]
+# Required: System core timezone
+USER_TIMEZONE = "Asia/Shanghai"
+
+# Optional: AI parser switch (true/false)
+ENABLE_AI = true
+
+# Optional: Auto summary schedule time (e.g. "09:00,21:00")
+CRON_SUMMARY_TIME = "09:00,21:00"
+
+# Optional: Base URL for web sharing links. Leave empty if you don't need sharing, or replace with your domain.
+BASE_URL = "" 
+
+# Feishu Bot Variables (Optional)
+# FEISHU_VERIFY_TOKEN = "YOUR_VERIFY_TOKEN"
+# FEISHU_ENCRYPT_KEY = "YOUR_ENCRYPT_KEY"
+# FEISHU_ALLOWED_CHAT_ID = "YOUR_ALLOWED_CHAT_ID"
+
+# -------------------------------------------------------------
+# Optional Custom Domain (Uncomment and replace to use your own domain)
+# [[routes]]
+# pattern = "claw-task.yourdomain.com"
+# custom_domain = true
+# -------------------------------------------------------------
+
+[ai]
+binding = "AI"
+
+# Scheduled Tasks (Cron Triggers)
+# triggers every 1 minute for cloud push notifications and scheduled tasks
+[triggers]
+crons = ["* * * * *"]
+
+[dev]
+port = 8787
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = false
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+
+[[r2_buckets]]
+binding = "AUDIO_BUCKET"
+# IMPORTANT: Must match the bucket name you created via: npx wrangler r2 bucket create volcengine-asr
+bucket_name = "volcengine-asr"
