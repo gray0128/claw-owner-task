@@ -9,9 +9,9 @@
 
 *   **高性能 CLI**：基于 Rust 编写，支持全平台（macOS/Linux/Windows），极速启动，内置自动升级。
 *   **AI 友好架构**：全局支持 `--json` 输出结构化数据；提供 `/api/info` 自发现接口，避免 Agent 产生参数幻觉。
-*   **AI 语义解析**：集成 Cloudflare Workers AI，支持自然语言创建任务（例如：“帮我记录明天下午三点的会议”），内置 `metadata` 溯源字段记录 AI 原始对话上下文。
-*   **双重提醒机制**：支持云端主动推送（Bark / Telegram）与本地 Agent (OpenCLaw) 轮询感知。
-*   **Telegram/飞书深度交互**：支持对话式任务管理、一键生成 AI 任务总结。
+*   **AI 语义解析**：集成 Cloudflare Workers AI，支持自然语言创建任务（例如：“帮我记录明天下午三点的会议”），支持云端定时推送 AI 任务总结。
+*   **多重提醒机制**：支持云端主动推送（Bark / Telegram / 飞书）。
+*   **Telegram/飞书深度交互**：支持对话式智能任务管理，以及精准斜杠命令。
 *   **精准时区管理**：采用“后端 UTC 存储 + 动态时区渲染”方案，彻底解决跨时区偏差。
 *   **极致 Serverless**：基于 Cloudflare Workers + D1 数据库，零成本部署。
 
