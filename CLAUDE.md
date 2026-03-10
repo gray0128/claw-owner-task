@@ -3,19 +3,19 @@
 This file provides guidance to AI Agents (including Claude and Gemini) when working with code in this repository.
 
 ## 项目概述
-**AI优先的任务管理系统 (claw-owner-task)** 是一个专为个人用户和 **AI Agent (OpenCLaw)** 设计的任务管理系统。支持跨平台部署，提供云端自触发提醒（Bark）与 Agent 本地提醒的双重能力。
+**AI优先的任务管理系统 (claw-owner-task)** 是一个专为个人用户 and **AI Agent (OpenCLaw)** 设计的任务管理系统。支持跨平台部署，提供云端自触发提醒（Bark）与 Agent 本地提醒的双重能力。
 
 ## 技术栈与核心组件
 - **后端 (API)**: Cloudflare Workers + TypeScript。提供自发现接口、Bark 推送（含审计日志记录与过期清理）、元数据处理、强制鉴权及严格的时间格式校验。
 - **数据库**: Cloudflare D1 (SQLite)。存储 UTC 时间、AI 上下文及关联标签。
-- **跨平台 CLI (`claw-task`)**: 提供 Node.js 版 (`src/cli/`) 和 Rust 高性能版 (`cli-rust/`) 两种实现，功能完全一致。支持多平台构建（含 Linux Musl）。
+- **跨平台 CLI (`claw-task`)**: 基于 Rust 开发的高性能二进制实现。支持多平台构建、静默版本检查及一键自动升级。
 - **前端 (Web)**: 原生 HTML/CSS/JS (No-build)，利用浏览器原生 ES Modules，极简且功能完备。
 
 ## 当前状态
 项目已完成全链路开发，并通过了完整的自动化测试验证。
-- **AI 友好设计**: 支持自发现接口 (`info`)、全局 `--json` 输出、任务 `metadata` 溯源。
+- **AI 友好设计**: 支持自发现接口 (`info`)、全局 `--json` 输出、任务 `metadata` 溯源、**Telegram 对话式交互**。
 - **健壮性**: 实现了 API 层的 ISO 日期格式严格校验，并配备了广泛的自动化测试套件。
-- **提醒机制**: 已实现云端 (Bark) 与本地 (Agent) 双路径提醒触发逻辑，并配备了日志审计与滚动清理系统。
+- **提醒机制**: 已实现云端 (**Bark & Telegram**) 与本地 (Agent) 多路径提醒触发逻辑，并配备了日志审计与滚动清理系统。
 
 ## 核心原则 (AI 交互准则)
 ### 1. AI 友好性与自发现
@@ -27,7 +27,7 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - **强制鉴权**: 所有非静态请求必须携带 Bearer Token (`TASK_API_KEY`)。
 - **敏感信息保护**: 配置文件（如 `wrangler.toml`、`.dev.vars`）中严禁出现生产环境的敏感信息（如真实的 `database_id`、`TASK_API_KEY`、`BARK_URL` 等）。每次提交代码前必须检查，确保不会将敏感数据泄露到版本控制中。
 - **时区一致性**: 后端存储 UTC，根据 `USER_TIMEZONE` 动态转换 I/O 时间。
-- **数据完整性**: API 层对 `due_date` 和 `remind_at` 执行严格的 ISO/YYYY-MM-DD 格式校验。
+- **数据完整性**: API 层对 `due_date` 和 `remind_at` 执行严格特 ISO/YYYY-MM-DD 格式校验。
 
 ### 3. 质量保障与自动化
 - 项目内置完整的自动化 API 测试套件 (`npm test`)，覆盖 CRUD、异常边界、自发现及提醒触发逻辑。
@@ -38,14 +38,12 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - **运行 API 测试**: `TASK_API_KEY=your_test_api_key_here npm test` (运行 `tests/run_api_tests.js` 时需指定测试 Key 避免 Shell 环境变量覆盖)
 - **运行 Rust 测试**: `cd cli-rust && cargo test`
 - **数据库迁移**: `npm run db:migrate:local`
-- **CLI (Node.js)**: `node src/cli/index.js [command]` 或 `claw-task [command]`
 - **CLI (Rust)**: `cd cli-rust && cargo run -- [command]`
 - **编译 Rust 版**: `cd cli-rust && cargo build --release`
 
 ## 目录结构
 - `src/worker/`: 后端中间件、服务逻辑、数据库迁移。
 - `src/web/`: 原生 Web 界面。
-- `src/cli/`: 跨平台命令行工具 (Node.js 版)。
 - `cli-rust/`: 跨平台命令行工具 (Rust 高性能版)。
 - `docs/`: 包含 `需求说明.md`, `技术架构.md`, `开发计划.md`, `缺陷修复记录.md`。
 - `tests/`: 包含测试计划、Mock 脚本及自动化 API 测试脚本 (`run_api_tests.js`)。
@@ -56,3 +54,8 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 
 ## 参考资料
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
+
+## 文档更新记录
+
+- GEMINI.md 不要维护更新记录
+- CLAUDE.md 不要维护更新记录
