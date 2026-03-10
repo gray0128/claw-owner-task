@@ -21,12 +21,6 @@ BASE_URL = "https://claw-task.bobocai.win" # 你的自定义域名 (例如 "http
 pattern = "claw-task.bobocai.win"
 custom_domain = true
 
-
-# QQ Bot Configuration (Fill in your values)
-# QQ_APP_ID = "YOUR_APP_ID"
-# QQ_APP_SECRET = "YOUR_APP_SECRET"
-# QQ_ALLOWED_OPENID = "YOUR_OPENID"
-
 # Feishu Bot Configuration (Fill in your values)
 # FEISHU_APP_ID = "YOUR_FEISHU_APP_ID"
 # FEISHU_APP_SECRET = "YOUR_FEISHU_APP_SECRET"

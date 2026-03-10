@@ -89,8 +89,6 @@ npx wrangler secret put TELEGRAM_BOT_TOKEN  # Telegram 机器人 API Token
 npx wrangler secret put TELEGRAM_CHAT_ID    # 唯一允许访问的 Telegram Chat ID
 npx wrangler secret put FEISHU_APP_ID       # 飞书自建应用 App ID
 npx wrangler secret put FEISHU_APP_SECRET   # 飞书自建应用 App Secret
-npx wrangler secret put QQ_APP_ID           # QQ 机器人 App ID
-npx wrangler secret put QQ_APP_SECRET       # QQ 机器人 App Secret
 npx wrangler secret put VOLC_API_KEY        # 火山引擎 API Key (用于处理语音消息)
 ```
 
@@ -107,7 +105,6 @@ npx wrangler secret put VOLC_API_KEY        # 火山引擎 API Key (用于处理
 | `FEISHU_VERIFY_TOKEN` | 无 | 飞书事件订阅 Verification Token |
 | `FEISHU_ENCRYPT_KEY` | 无 | 飞书事件订阅 Encrypt Key |
 | `FEISHU_ALLOWED_CHAT_ID`| 无 | 允许访问的飞书 Chat/Open ID（逗号分隔） |
-| `QQ_ALLOWED_OPENID`   | 无 | 允许访问的 QQ Open ID |
 
 ---
 
