@@ -177,10 +177,12 @@ export TASK_API_KEY="你的密钥"
 
 ### 时间处理
 - 后端统一存储 **UTC** 时间。输入不含时区的字符串时，系统依据 `USER_TIMEZONE` 自动补齐。
-- Web、CLI 和 Telegram 均基于 `USER_TIMEZONE` 进行格式化展示，确保多端一致。
+- Web、CLI 和 Chatbots 均基于 `USER_TIMEZONE` 进行格式化展示，确保多端一致。
 
-### AI 限制
-- 语义解析依赖 Cloudflare Workers AI 额度（免费版通常为每日 10k Neurons）。若额度耗尽，相关 AI 功能将报错。
+### AI 模型与限制
+- **所用模型**：当前后端通过 Cloudflare Workers AI 调用 `@cf/zai-org/glm-4.7-flash` 模型。
+- **应用场景**：该模型用于两个核心功能：（1）解析用户的自然语言（从文本中提取任务标题、时间和动作）；（2）对近期的任务执行情况进行梳理，生成供推送的任务总结报告。
+- **额度限制**：语义解析与总结生成均消耗 Cloudflare Workers AI 额度（免费版通常为每日 10,000 Neurons）。若额度耗尽，相关 AI 功能将报错。
 
 ---
 
