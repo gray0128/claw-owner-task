@@ -56,7 +56,7 @@ sudo claw-task upgrade
 ### 1. 资源绑定配置 (Bindings)
 在 `wrangler.toml` 中，系统需要绑定以下 Cloudflare 资源：
 - **D1 Database** (`DB`): 存储所有任务、标签、配置及推送日志。需创建数据库 `claw-owner-task-db`，并将生成的 `database_id` 填入 `wrangler.toml` 对应的 `[[d1_databases]]` 块中。
-- **Workers AI** (`AI`): 核心 AI 语义解析引擎（基于 `@cf/qwen/qwen1.5-14b-chat-awq` 等模型）。
+- **Workers AI** (`AI`): 核心 AI 语义解析引擎（基于 `@cf/zai-org/glm-4.7-flash` 等模型）。
 - **R2 Bucket** (`AUDIO_BUCKET`): 暂存飞书、Telegram 等渠道发来的语音消息，并供火山引擎 ASR 引擎下载转译。需创建一个名为 `volcengine-asr` 的 R2 存储桶。
 
 1. **创建 D1 数据库并填入配置**：
