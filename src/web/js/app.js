@@ -12,6 +12,20 @@ const ui = {
   searchQ: document.getElementById('searchQ'),
   filterStatus: document.getElementById('filterStatus'),
   refreshBtn: document.getElementById('refreshBtn'),
+  editModal: document.getElementById('editModal'),
+  editTaskForm: document.getElementById('editTaskForm'),
+  editTaskId: document.getElementById('editTaskId'),
+  editTaskTitle: document.getElementById('editTaskTitle'),
+  editTaskDesc: document.getElementById('editTaskDesc'),
+  editTaskPriority: document.getElementById('editTaskPriority'),
+  editTaskStatus: document.getElementById('editTaskStatus'),
+  editModalClose: document.querySelector('.close'),
+  githubLoginBtn: document.getElementById('githubLoginBtn'),
+  logoutBtn: document.getElementById('logoutBtn'),
+  loginSection: document.getElementById('loginSection'),
+  userInfoSection: document.getElementById('userInfoSection'),
+  userAvatar: document.getElementById('userAvatar'),
+  username: document.getElementById('username'),
 };
 
 let systemTimezone = 'Asia/Shanghai';
@@ -20,6 +34,42 @@ let systemTimezone = 'Asia/Shanghai';
 const config = getConfig();
 ui.apiKey.value = config.key;
 ui.apiUrl.value = config.url;
+
+// Check for OAuth callback parameters
+const urlParams = new URLSearchParams(window.location.search);
+const apiKey = urlParams.get('api_key');
+const username = urlParams.get('username');
+const avatar = urlParams.get('avatar');
+
+if (apiKey) {
+  updateConfig(config.url, apiKey);
+  if (username) localStorage.setItem('GITHUB_USERNAME', username);
+  if (avatar) localStorage.setItem('GITHUB_AVATAR', avatar);
+  // Clear query parameters
+  window.history.replaceState({}, document.title, window.location.pathname);
+  ui.apiKey.value = apiKey;
+  initSystemInfo().then(loadTasks);
+}
+
+// Update login UI
+function updateLoginUI() {
+  const hasKey = !!getConfig().key;
+  const savedUsername = localStorage.getItem('GITHUB_USERNAME');
+  const savedAvatar = localStorage.getItem('GITHUB_AVATAR');
+
+  if (hasKey && savedUsername) {
+    ui.loginSection.style.display = 'none';
+    ui.userInfoSection.style.display = 'block';
+    ui.username.textContent = savedUsername;
+    ui.userAvatar.src = savedAvatar;
+  } else {
+    ui.loginSection.style.display = 'block';
+    ui.userInfoSection.style.display = 'none';
+  }
+}
+
+// Call on init
+updateLoginUI();
 
 async function initSystemInfo() {
   if (getConfig().key) {
@@ -51,8 +101,26 @@ function formatDate(dateStr) {
 
 ui.saveSettingsBtn.addEventListener('click', async () => {
   updateConfig(ui.apiUrl.value, ui.apiKey.value);
+  localStorage.removeItem('GITHUB_USERNAME');
+  localStorage.removeItem('GITHUB_AVATAR');
   await initSystemInfo();
+  updateLoginUI();
   alert('Settings saved!');
+  loadTasks();
+});
+
+// GitHub login
+ui.githubLoginBtn.addEventListener('click', () => {
+  const apiUrl = getConfig().url;
+  window.location.href = `${apiUrl}/auth/github/login`;
+});
+
+// Logout
+ui.logoutBtn.addEventListener('click', () => {
+  updateConfig(getConfig().url, '');
+  localStorage.removeItem('GITHUB_USERNAME');
+  localStorage.removeItem('GITHUB_AVATAR');
+  updateLoginUI();
   loadTasks();
 });
 
@@ -105,6 +173,7 @@ async function loadTasks() {
         </div>
         <div class="task-actions">
           ${task.status !== 'completed' ? `<button class="btn-complete" data-id="${task.id}">Complete</button>` : ''}
+          <button class="btn-edit" data-id="${task.id}">Edit</button>
           <button class="btn-delete" data-id="${task.id}">Delete</button>
         </div>
       `;
@@ -132,13 +201,30 @@ ui.addTaskForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Handle complete/delete clicks
+// Handle complete/delete/edit clicks
 ui.tasksContainer.addEventListener('click', async (e) => {
   if (e.target.classList.contains('btn-complete')) {
     const id = e.target.getAttribute('data-id');
     try {
       await api.tasks.complete(id);
       loadTasks();
+    } catch (err) {
+      alert(err.message);
+    }
+  } else if (e.target.classList.contains('btn-edit')) {
+    const id = e.target.getAttribute('data-id');
+    // Fetch task details and open modal
+    try {
+      const tasks = await api.tasks.list(`?id=${id}`);
+      const task = tasks[0];
+      if (task) {
+        ui.editTaskId.value = task.id;
+        ui.editTaskTitle.value = task.title;
+        ui.editTaskDesc.value = task.description || '';
+        ui.editTaskPriority.value = task.priority;
+        ui.editTaskStatus.value = task.status;
+        ui.editModal.style.display = 'block';
+      }
     } catch (err) {
       alert(err.message);
     }
@@ -152,6 +238,36 @@ ui.tasksContainer.addEventListener('click', async (e) => {
         alert(err.message);
       }
     }
+  }
+});
+
+// Close modal when clicking X
+ui.editModalClose.addEventListener('click', () => {
+  ui.editModal.style.display = 'none';
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+  if (e.target === ui.editModal) {
+    ui.editModal.style.display = 'none';
+  }
+});
+
+// Handle edit form submit
+ui.editTaskForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = ui.editTaskId.value;
+  try {
+    await api.tasks.update(id, {
+      title: ui.editTaskTitle.value,
+      description: ui.editTaskDesc.value,
+      priority: ui.editTaskPriority.value,
+      status: ui.editTaskStatus.value
+    });
+    ui.editModal.style.display = 'none';
+    loadTasks();
+  } catch (err) {
+    alert(`Failed to update task: ${err.message}`);
   }
 });
 

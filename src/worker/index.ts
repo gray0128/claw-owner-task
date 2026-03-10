@@ -17,6 +17,7 @@ import { audioProxyHandlers } from './handlers/audio-proxy';
 import { authSummaryHandlers, publicSummaryHandlers } from './handlers/summary';
 import { publicShareHandlers } from './handlers/share';
 import { publicListHandlers } from './handlers/list';
+import githubAuth from './handlers/auth/github';
 
 export type Bindings = {
   DB: D1Database;
@@ -38,6 +39,13 @@ export type Bindings = {
   VOLC_API_KEY?: string;
   VOLC_API_HOST?: string;
   CRON_SUMMARY_TIME?: string; // Format: "HH:mm" in user timezone
+
+  // GitHub OAuth Config
+  GITHUB_OAUTH_CLIENT_ID?: string;
+  GITHUB_OAUTH_CLIENT_SECRET?: string;
+  GITHUB_OAUTH_REDIRECT_URI?: string;
+  GITHUB_ALLOWED_USER_ID?: string;
+  GITHUB_ALLOWED_USERNAME?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -59,6 +67,7 @@ app.route('/api/tags', tagHandlers);
 app.route('/api/remind', remindHandlers);
 app.route('/api/logs', logsHandlers);
 app.route('/api/summary', authSummaryHandlers);
+app.route('/api/auth/github', githubAuth);
 
 // Public Routes (No Auth)
 app.route('/summary', publicSummaryHandlers);

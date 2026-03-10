@@ -11,9 +11,18 @@
     <header>
       <h1>Claw Owner Task</h1>
       <div class="settings">
-        <input type="password" id="apiKey" placeholder="Enter TASK_API_KEY">
-        <input type="text" id="apiUrl" placeholder="API URL" value="http://localhost:8787/api">
-        <button id="saveSettingsBtn">Save</button>
+        <div id="loginSection">
+          <input type="password" id="apiKey" placeholder="Enter TASK_API_KEY">
+          <input type="text" id="apiUrl" placeholder="API URL" value="http://localhost:8787/api">
+          <button id="saveSettingsBtn">Save</button>
+          <span style="margin: 0 10px;">or</span>
+          <button id="githubLoginBtn" class="github-btn">Login with GitHub</button>
+        </div>
+        <div id="userInfoSection" style="display: none;">
+          <img id="userAvatar" style="width: 32px; height: 32px; border-radius: 50%; vertical-align: middle; margin-right: 8px;">
+          <span id="username" style="margin-right: 16px;"></span>
+          <button id="logoutBtn">Logout</button>
+        </div>
       </div>
     </header>
 
@@ -48,6 +57,31 @@
         </ul>
       </section>
     </main>
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit Task</h2>
+      <form id="editTaskForm">
+        <input type="hidden" id="editTaskId">
+        <input type="text" id="editTaskTitle" placeholder="Task title" required>
+        <input type="text" id="editTaskDesc" placeholder="Description (optional)">
+        <select id="editTaskPriority">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <select id="editTaskStatus">
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
   </div>
 
   <script type="module" src="./js/app.js"></script>

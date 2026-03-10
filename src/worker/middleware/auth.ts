@@ -23,6 +23,11 @@ export async function authMiddleware(c: Context, next: Next) {
     return await next();
   }
 
+  // skip auth for github oauth endpoints
+  if (c.req.path.startsWith('/api/auth/github')) {
+    return await next();
+  }
+
   const authHeader = c.req.header('Authorization');
   const expectedKey = c.env.TASK_API_KEY;
 

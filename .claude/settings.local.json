@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npx tsc --noEmit)",
       "Bash(cargo build:*)",
-      "Bash(cargo run:*)"
+      "Bash(cargo run:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run:*)",
+      "Bash(TASK_API_KEY=test_key npm test)"
     ]
   }
 }

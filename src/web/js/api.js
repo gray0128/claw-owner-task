@@ -37,6 +37,7 @@ export const api = {
   tasks: {
     list: (query = '') => request(`/tasks${query}`),
     create: (data) => request('/tasks', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/tasks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     complete: (id) => request(`/tasks/${id}/complete`, { method: 'PUT' }),
     delete: (id) => request(`/tasks/${id}`, { method: 'DELETE' })
   }

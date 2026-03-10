@@ -51,6 +51,14 @@ button:hover {
   opacity: 0.9;
 }
 
+.github-btn {
+  background: #24292f;
+}
+
+.github-btn:hover {
+  background: #333;
+}
+
 .task-form {
   margin-bottom: 20px;
   padding: 15px;
@@ -98,6 +106,54 @@ button:hover {
 
 .task-card:hover {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 8px;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#editTaskForm input, #editTaskForm select {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
   transform: translateY(-2px);
 }
 

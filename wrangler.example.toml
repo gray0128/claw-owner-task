@@ -8,7 +8,7 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "claw-owner-task-db"
-database_id = "your-database-id-here" 
+database_id = "your-database-id-here"
 migrations_dir = "src/worker/db/migrations"
 
 # Environment Variables
@@ -23,22 +23,26 @@ ENABLE_AI = true
 CRON_SUMMARY_TIME = "09:00,21:00"
 
 # Optional: Base URL for web sharing links. Leave empty if you don't need sharing, or replace with your domain.
-BASE_URL = "" 
+BASE_URL = "https://your-domain.com"
 
-# -------------------------------------------------------------
-# Optional Custom Domain (Uncomment and replace to use your own domain)
-# Purpose: Automatically binds your domain to this Worker and configures DNS & HTTPS.
-# Requirement: The apex domain (e.g. yourdomain.com) must already be managed by your active Cloudflare account.
+# Optional: GitHub OAuth Configuration (for GitHub login feature)
+# GITHUB_OAUTH_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID"
+# GITHUB_OAUTH_REDIRECT_URI = "https://your-domain.com/api/auth/github/callback"
+# GITHUB_ALLOWED_USER_ID = "YOUR_GITHUB_USER_ID"
+# GITHUB_ALLOWED_USERNAME = "YOUR_GITHUB_USERNAME"
+
+# 自定义域名绑定 (可选)
+# 作用: 将你的独立域名绑定到该 Worker，Cloudflare 会自动接管 DNS 记录并配置 HTTPS。
+# 前提: pattern 中的主域名必须已经托管在你当前部署使用的 Cloudflare 账号下。
 # [[routes]]
-# pattern = "claw-task.yourdomain.com"
+# pattern = "claw-task.your-domain.com"
 # custom_domain = true
-# -------------------------------------------------------------
 
 [ai]
 binding = "AI"
 
 # Scheduled Tasks (Cron Triggers)
-# triggers every 1 minute for cloud push notifications and scheduled tasks
+# triggers every 1 minute for cloud bark notifications
 [triggers]
 crons = ["* * * * *"]
 
