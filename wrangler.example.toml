@@ -3,6 +3,11 @@ main = "src/worker/index.ts"
 compatibility_date = "2024-02-22"
 workers_dev = true
 
+# Static assets configuration (automatically serves files from src/web directory)
+[assets]
+directory = "src/web"
+
+
 # D1 Database binding
 # IMPORTANT: Replace database_id with your own D1 database ID after running: npx wrangler d1 create claw-owner-task-db
 [[d1_databases]]
