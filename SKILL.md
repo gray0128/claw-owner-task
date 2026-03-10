@@ -142,12 +142,6 @@ claw-task complete 5 --json
 claw-task delete 5 --json
 ```
 
-### 提醒检查 (check)
-```bash
-# 检查并触发 agent 渠道提醒（返回当前需要提醒的任务列表）
-claw-task check --channel agent --json
-```
-
 ### 标签管理 (tags / add-tag)
 ```bash
 claw-task tags --json

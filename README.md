@@ -168,7 +168,6 @@ export TASK_API_KEY="你的密钥"
 ### 常用命令示例
 - **列表查看**：`claw-task list --status pending`
 - **AI 录入**：`claw-task ai "明天中午十二点去取快递"`
-- **手动触发推送**：`claw-task check --channel bark`
 - **生成任务总结**：`claw-task summary`
 
 ---
@@ -193,5 +192,5 @@ export TASK_API_KEY="你的密钥"
 - `/docs`: 开发计划与架构方案。
 
 ---
-**Last Updated**: 2026-03-10  
-**Changes**: 增加 chatbots 快捷查询列表（`/list`）与单条任务详情（`/#id`）斜杠指令说明。
+**Last Updated**: 2026-03-10
+**Changes**: 移除CLI中的`check`命令（`--channel cloud/agent`），避免用户误操作，云端定时推送功能不受影响。

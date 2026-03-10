@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(cargo build:*)",
+      "Bash(cargo run:*)"
     ]
   }
 }

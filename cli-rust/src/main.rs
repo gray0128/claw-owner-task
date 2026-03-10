@@ -141,12 +141,6 @@ enum Commands {
         id: String,
     },
 
-    /// Check and trigger reminders (For Cron/Agent use)
-    Check {
-        /// Channel to trigger: "agent" or "cloud"
-        #[arg(long)]
-        channel: String,
-    },
 
     /// Query recent Bark push logs (recent 7 days)
     Logs {
@@ -600,31 +594,6 @@ fn main() {
             };
             if !format_output(json_mode, &output) {
                 println!("Task {id} deleted.");
-            }
-        }
-
-        // --- Check (Remind) ---
-        Commands::Check { channel } => {
-            let res = client.remind_check(&channel);
-            if json_mode {
-                println!("{}", serde_json::to_string_pretty(&res).unwrap());
-                return;
-            }
-            let tasks = res.get("tasks").and_then(|v| v.as_array());
-            if let Some(arr) = tasks {
-                if !arr.is_empty() {
-                    println!("Triggered {} reminders.", arr.len());
-                    if channel == "agent" {
-                        println!(
-                            "{}",
-                            serde_json::to_string_pretty(&Value::Array(arr.clone())).unwrap()
-                        );
-                    }
-                } else {
-                    println!("No tasks to remind at this time.");
-                }
-            } else {
-                println!("No tasks to remind at this time.");
             }
         }
 
