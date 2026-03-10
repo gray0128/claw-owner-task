@@ -39,3 +39,4 @@ bin/
 
 # Development logs
 .dev_logs
+wrangler.toml
