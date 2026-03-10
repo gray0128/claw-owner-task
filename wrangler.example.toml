@@ -27,6 +27,8 @@ BASE_URL = ""
 
 # -------------------------------------------------------------
 # Optional Custom Domain (Uncomment and replace to use your own domain)
+# Purpose: Automatically binds your domain to this Worker and configures DNS & HTTPS.
+# Requirement: The apex domain (e.g. yourdomain.com) must already be managed by your active Cloudflare account.
 # [[routes]]
 # pattern = "claw-task.yourdomain.com"
 # custom_domain = true
