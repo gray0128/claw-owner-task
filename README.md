@@ -97,7 +97,7 @@ npx wrangler secret put VOLC_API_KEY        # 火山引擎 API Key (用于处理
 
 | 参数名 | 是否必填 | 默认值 | 说明 |
 | :--- | :---: | :--- | :--- |
-| `USER_TIMEZONE` | **是** | `Asia/Shanghai` | 服务端基准时区。所有与时间相关的处理都依赖此配置，强烈建议根据所在地正确设置。 |
+| `USER_TIMEZONE` | **是** | `Asia/Shanghai` | 服务端基准时区。所有与时间相关的处理都依赖此配置，强烈建议根据所在地正确设置（例如：`America/New_York`, `Europe/London`, `Asia/Tokyo` 等）。 |
 | `ENABLE_AI` | 否 | `true` | 是否启用 AI 语义解析。如果关闭，所有的文本将原样作为标题创建任务，不消耗 AI 额度。 |
 | `CRON_SUMMARY_TIME` | 否 | `09:00,21:00` | 自动推送 AI 总结的时间点 (格式 `HH:mm`，支持逗号分隔多个)。若不需定时总结可置空。 |
 | `BASE_URL` | 否 | `https://...` | 你的 Worker 自定义域名，用于生成各类 Web 网页卡片分享链接。**强烈建议配置**，否则分享的链接可能无法在公网被正常访问。 |
