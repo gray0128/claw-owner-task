@@ -172,6 +172,42 @@ app.post('/', async (c) => {
                     await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令执行崩溃 (Summary)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
                 }
                 return;
+            } else if (cmdName === 'list' || cmdName === '列表') {
+                await sendTelegramNotification(telegramToken, chatId, `⏳ <b>正在获取任务列表，请稍候...</b>`, 'HTML');
+                try {
+                    const listRes = await taskHandlers.request('/', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                            'X-User-Timezone': userTimezone,
+                            'X-Forwarded-Host': publicHost,
+                            'X-Forwarded-Proto': publicProto
+                        }
+                    }, c.env);
+
+                    if (listRes.ok) {
+                        const listData: any = await listRes.json();
+                        if (listData.success) {
+                            const tasks = listData.data;
+                            if (!tasks || tasks.length === 0) {
+                                await sendTelegramNotification(telegramToken, chatId, `✅ <b>当前没有任务。</b>`, 'HTML');
+                            } else {
+                                const listUrl = await createListUrl(c, tasks, '所有任务列表');
+                                await sendTelegramNotification(telegramToken, chatId, `✅ <b>任务列表获取成功</b>\n\n共 ${tasks.length} 个任务。\n${escapeTelegramHTML(listUrl)}`, 'HTML');
+                            }
+                        } else {
+                            await sendTelegramNotification(telegramToken, chatId, `❌ <b>获取列表失败</b>\n<pre>${escapeTelegramHTML(listData.error?.message || '未知错误')}</pre>`, 'HTML');
+                        }
+                    } else {
+                        const errorText = await listRes.text();
+                        console.error('[Telegram] List command failed:', errorText);
+                        await sendTelegramNotification(telegramToken, chatId, `❌ <b>获取列表失败</b>\n<pre>${escapeTelegramHTML(errorText)}</pre>`, 'HTML');
+                    }
+                } catch (err: any) {
+                    console.error('[Telegram] List command exception:', err);
+                    await sendTelegramNotification(telegramToken, chatId, `❌ <b>内部指令错误 (List)</b>\n<pre>${escapeTelegramHTML(err.message)}</pre>`, 'HTML');
+                }
+                return;
             } else if (cmdName === 'add' || cmdName === '添加') {
                 if (!cmdArgs || !cmdArgs.trim()) {
                     await sendTelegramNotification(telegramToken, chatId, `ℹ️ <b>使用说明</b>\n请提供任务内容，例如：\n<pre>/add 买牛奶</pre>`, 'HTML');

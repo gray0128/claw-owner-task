@@ -256,6 +256,40 @@ app.post('/', async (c) => {
                         await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令执行崩溃 (Summary)\n${err.message}`, receiveIdType, 'text');
                     }
                     return;
+                } else if (cmdName === 'list' || cmdName === '列表') {
+                    await sendFeishuMessage(tenantAccessToken, receiveId, '⏳ 正在获取任务列表，请稍候...', receiveIdType, 'text');
+                    try {
+                        const listRes = await taskHandlers.request('/', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${c.env.TASK_API_KEY}`,
+                                'X-User-Timezone': userTimezone,
+                                'X-Forwarded-Host': publicHost,
+                                'X-Forwarded-Proto': publicProto
+                            }
+                        }, c.env);
+
+                        if (listRes.ok) {
+                            const listData: any = await listRes.json();
+                            if (listData.success) {
+                                const tasks = listData.data;
+                                if (!tasks || tasks.length === 0) {
+                                    await sendFeishuMessage(tenantAccessToken, receiveId, `✅ 当前没有任务。`, receiveIdType, 'text');
+                                } else {
+                                    const listUrl = await createListUrl(c, tasks, '所有任务列表');
+                                    await sendFeishuMessage(tenantAccessToken, receiveId, `✅ 任务列表获取成功\n\n共 ${tasks.length} 个任务。\n${listUrl}`, receiveIdType, 'text');
+                                }
+                            } else {
+                                await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 获取列表失败\n${listData.error?.message || '未知错误'}`, receiveIdType, 'text');
+                            }
+                        } else {
+                            const errorText = await listRes.text();
+                            await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 获取列表失败\n${errorText}`, receiveIdType, 'text');
+                        }
+                    } catch (err: any) {
+                        await sendFeishuMessage(tenantAccessToken, receiveId, `❌ 内部指令错误 (List)\n${err.message}`, receiveIdType, 'text');
+                    }
+                    return;
                 } else if (cmdName === 'add' || cmdName === '添加') {
                     if (!cmdArgs || !cmdArgs.trim()) {
                         await sendFeishuMessage(tenantAccessToken, receiveId, `ℹ️ 使用说明\n请提供任务内容，例如：\n/add 买牛奶`, receiveIdType, 'text');
