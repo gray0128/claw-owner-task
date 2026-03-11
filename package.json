@@ -1,6 +1,6 @@
 {
   "name": "claw-owner-task",
-  "version": "1.8.4",
+  "version": "1.9.1",
   "type": "module",
   "description": "A simple task manager for personal use and OpenCLaw agent",
   "main": "src/worker/index.ts",

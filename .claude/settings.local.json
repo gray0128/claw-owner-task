@@ -6,7 +6,17 @@
       "Bash(cargo run:*)",
       "Bash(npm test:*)",
       "Bash(npm run:*)",
-      "Bash(TASK_API_KEY=test_key npm test)"
+      "Bash(TASK_API_KEY=test_key npm test)",
+      "Bash(git push:*)",
+      "Bash(curl:*)",
+      "Bash(~/.agents/skills/skill-creator/agents/analyzer.md)",
+      "Bash(~/.agents/skills/skill-creator/agents/comparator.md)",
+      "Bash(~/.agents/skills/skill-creator/agents/grader.md)",
+      "Bash(~/.agents/skills/skill-creator/assets/eval_review.html)",
+      "Bash(~/.agents/skills/skill-creator/eval-viewer/generate_review.py)",
+      "Bash(~/.agents/skills/skill-creator/eval-viewer/viewer.html)",
+      "Bash(~/.agents/skills/skill-creator/references/schemas.md)",
+      "Bash(~/.agents/skills/skill-creator/LICENSE.txt)"
     ]
   }
 }

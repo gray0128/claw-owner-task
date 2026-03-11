@@ -5,6 +5,7 @@ use api::ApiClient;
 use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
+use std::io::{IsTerminal, Write};
 use std::process;
 use tabled::{Table, Tabled};
 
@@ -139,6 +140,9 @@ enum Commands {
     Delete {
         /// Task ID
         id: String,
+        /// Force deletion without confirmation
+        #[arg(short, long)]
+        force: bool,
     },
 
 
@@ -585,7 +589,38 @@ fn main() {
         }
 
         // --- Delete ---
-        Commands::Delete { id } => {
+        Commands::Delete { id, force } => {
+            if !force && !json_mode && std::io::stdin().is_terminal() {
+                let task = client.get_task(&id);
+                println!("Are you sure you want to delete the following task?");
+                if let Some(title) = task.get("title").and_then(|v| v.as_str()) {
+                    println!("  Title: {}", title);
+                }
+                if let Some(desc) = task.get("description").and_then(|v| v.as_str()) {
+                    if !desc.is_empty() {
+                        println!("  Description: {}", desc);
+                    }
+                }
+                if let Some(status) = task.get("status").and_then(|v| v.as_str()) {
+                    println!("  Status: {}", status);
+                }
+
+                print!("Type 'y' or 'yes' to confirm: ");
+                let _ = std::io::stdout().flush();
+
+                let mut input = String::new();
+                if std::io::stdin().read_line(&mut input).is_ok() {
+                    let confirm = input.trim().to_lowercase();
+                    if confirm != "y" && confirm != "yes" {
+                        println!("Deletion cancelled.");
+                        return;
+                    }
+                } else {
+                    println!("Failed to read input. Deletion cancelled.");
+                    return;
+                }
+            }
+
             let res = client.delete_task(&id);
             let output = if res.is_null() {
                 json!({"success": true, "id": id})

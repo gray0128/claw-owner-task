@@ -123,6 +123,10 @@ impl ApiClient {
         self.request("GET", &format!("/tasks{query_string}"), None)
     }
 
+    pub fn get_task(&self, id: &str) -> Value {
+        self.request("GET", &format!("/tasks/{id}"), None)
+    }
+
     pub fn create_task(&self, payload: Value) -> Value {
         self.request("POST", "/tasks", Some(payload))
     }
