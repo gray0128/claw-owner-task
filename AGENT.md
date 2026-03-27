@@ -6,7 +6,7 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 
 > **在执行任何与前端原型相关的任务前，必须首先阅读以下文档：**
 >
-> **[原型更新指南](docs/原型更新指南.md)**
+> **[原型更新指南](docs/开发指南/原型更新指南.md)**
 >
 > 该文档规定了原型页面的标准结构、命名规范、修改流程和注意事项。不遵循该指南的修改可能导致原型不一致或结构损坏。
 
@@ -65,7 +65,8 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 - `src/worker/`: 后端中间件、服务逻辑、数据库迁移。
 - `src/web/`: 原生 Web 界面。
 - `cli-rust/`: 跨平台命令行工具 (Rust 高性能版)。
-- `docs/`: 包含 `需求说明.md`, `技术架构.md`, `开发计划.md`, `缺陷修复记录.md`, `原型更新指南.md`。
+- `docs/`: 包含 `需求说明.md`, `技术架构.md`, `开发计划.md`, `缺陷修复记录.md` 等。
+- `docs/开发指南/`: 包含 `原型更新指南.md` 等开发规范文档。
 - `tests/`: 包含测试计划、Mock 脚本及自动化 API 测试脚本 (`run_api_tests.js`)。
 
 ## 缺陷修复与已知问题
@@ -77,4 +78,4 @@ This file provides guidance to AI Agents (including Claude and Gemini) when work
 ## 参考资料
 
 - [OpenCLaw 工具文档](https://docs.openclaw.ai/zh-CN/tools)
-- [原型更新指南](docs/原型更新指南.md)
+- [原型更新指南](docs/开发指南/原型更新指南.md)
