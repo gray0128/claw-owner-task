@@ -16,7 +16,9 @@
       "Bash(~/.agents/skills/skill-creator/eval-viewer/generate_review.py)",
       "Bash(~/.agents/skills/skill-creator/eval-viewer/viewer.html)",
       "Bash(~/.agents/skills/skill-creator/references/schemas.md)",
-      "Bash(~/.agents/skills/skill-creator/LICENSE.txt)"
+      "Bash(~/.agents/skills/skill-creator/LICENSE.txt)",
+      "Bash(npx:*)",
+      "Bash(python3:*)"
     ]
   }
 }
