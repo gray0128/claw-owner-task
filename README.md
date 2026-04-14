@@ -74,7 +74,7 @@ sudo claw-task upgrade
    ```
 4. **部署 Worker**：
    ```bash
-   npm run deploy
+   npx wrangler deploy
    ```
 
 ### 2. 机密变量配置 (Secrets)
