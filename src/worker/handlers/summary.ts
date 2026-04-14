@@ -377,7 +377,8 @@ authSummaryHandlers.post('/', async (c) => {
 
   let aiResponse: any;
   try {
-    aiResponse = await c.env.AI.run('@cf/zai-org/glm-4.7-flash', {
+    const model = c.env.AI_MODEL || '@cf/zai-org/glm-4.7-flash';
+    aiResponse = await c.env.AI.run(model, {
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: tasksJson }

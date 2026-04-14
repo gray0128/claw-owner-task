@@ -23,6 +23,7 @@ export type Bindings = {
   DB: D1Database;
   AUDIO_BUCKET: R2Bucket;
   AI: any;
+  AI_MODEL?: string;
   ENABLE_AI: string | boolean;
   TASK_API_KEY: string;
   USER_TIMEZONE: string;

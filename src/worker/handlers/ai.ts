@@ -139,7 +139,8 @@ Important Instructions:
 `;
 
   try {
-    const aiResponse: any = await c.env.AI.run('@cf/zai-org/glm-4.7-flash', {
+    const model = c.env.AI_MODEL || '@cf/zai-org/glm-4.7-flash';
+    const aiResponse: any = await c.env.AI.run(model, {
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: text }
