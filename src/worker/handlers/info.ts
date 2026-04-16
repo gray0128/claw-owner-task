@@ -16,6 +16,12 @@ app.get('/', async (c) => {
     data: {
       version: '1.3.1',
       timezone: userTimezone,
+      config: {
+        enable_ai: c.env.ENABLE_AI !== 'false' && c.env.ENABLE_AI !== false,
+        ai_model: c.env.AI_MODEL || '@cf/zai-org/glm-4.7-flash',
+        volc_asr_model: c.env.VOLC_ASR_MODEL || 'bigmodel',
+        volc_asr_resource_id: c.env.VOLC_ASR_RESOURCE_ID || 'volc.seedasr.auc'
+      },
       enums: {
         status: ['pending', 'in_progress', 'completed', 'cancelled'],
         priority: ['low', 'medium', 'high'],

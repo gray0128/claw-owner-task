@@ -1,18 +1,21 @@
 export interface AsrConfig {
   apiKey: string;
   apiHost?: string;
+  modelName?: string;
+  resourceId?: string;
 }
 
 const DEFAULT_HOST = 'https://openspeech.bytedance.com';
 const SUBMIT_PATH = '/api/v3/auc/bigmodel/submit';
 const QUERY_PATH = '/api/v3/auc/bigmodel/query';
 const DEFAULT_RESOURCE_ID = 'volc.seedasr.auc';
+const DEFAULT_MODEL = 'bigmodel';
 
 function buildHeaders(config: AsrConfig, requestId: string): Record<string, string> {
   return {
     'Content-Type': 'application/json',
     'x-api-key': config.apiKey,
-    'X-Api-Resource-Id': DEFAULT_RESOURCE_ID,
+    'X-Api-Resource-Id': config.resourceId || DEFAULT_RESOURCE_ID,
     'X-Api-Request-Id': requestId,
     'X-Api-Sequence': '-1',
   };
@@ -35,7 +38,7 @@ export async function submitAsrTask(audioUrl: string, config: AsrConfig): Promis
       channel: 1,
     },
     request: {
-      model_name: 'bigmodel',
+      model_name: config.modelName || DEFAULT_MODEL,
       enable_itn: true,
       enable_punc: true,
       enable_ddc: false,

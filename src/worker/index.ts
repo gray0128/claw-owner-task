@@ -24,6 +24,10 @@ export type Bindings = {
   AUDIO_BUCKET: R2Bucket;
   AI: any;
   AI_MODEL?: string;
+  VOLC_API_KEY?: string;
+  VOLC_API_HOST?: string;
+  VOLC_ASR_MODEL?: string;
+  VOLC_ASR_RESOURCE_ID?: string;
   ENABLE_AI: string | boolean;
   TASK_API_KEY: string;
   USER_TIMEZONE: string;
@@ -37,8 +41,6 @@ export type Bindings = {
   FEISHU_VERIFY_TOKEN?: string;
   FEISHU_ENCRYPT_KEY?: string;
   FEISHU_ALLOWED_CHAT_ID?: string;
-  VOLC_API_KEY?: string;
-  VOLC_API_HOST?: string;
   CRON_SUMMARY_TIME?: string; // Format: "HH:mm" in user timezone
 
   // GitHub OAuth Config

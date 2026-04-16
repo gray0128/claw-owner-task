@@ -125,7 +125,12 @@ app.post('/', async (c) => {
                         }
                         
                         const { processAudioToText } = await import('../services/asr');
-                        const asrText = await processAudioToText(proxyUrl, { apiKey: volcApiKey, apiHost: c.env.VOLC_API_HOST });
+                        const asrText = await processAudioToText(proxyUrl, { 
+                            apiKey: volcApiKey, 
+                            apiHost: c.env.VOLC_API_HOST,
+                            modelName: c.env.VOLC_ASR_MODEL,
+                            resourceId: c.env.VOLC_ASR_RESOURCE_ID
+                        });
                         
                         if (!asrText || asrText.includes('静音')) {
                             await sendTelegramNotification(telegramToken, chatId, `⚠️ 语音似乎是静音或未识别出文字。`, 'HTML');
