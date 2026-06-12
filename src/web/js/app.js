@@ -347,6 +347,11 @@ async function bootstrap() {
     try {
       await initSystemInfo();
       await loadTasks();
+      if (sessionStorage.getItem('oauth_just_logged_in')) {
+        sessionStorage.removeItem('oauth_just_logged_in');
+        const name = localStorage.getItem('GITHUB_USERNAME');
+        toast(`欢迎回来，${name || '用户'}！`, 'success');
+      }
     } catch (err) {
       updateConfig(DEFAULT_API_URL, '');
       showScreen(false);

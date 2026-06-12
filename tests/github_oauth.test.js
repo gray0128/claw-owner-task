@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   isGitHubUserAllowed,
   getOAuthFrontendUrl,
+  buildOAuthSuccessHtml,
 } from '../src/worker/handlers/auth/github.ts';
 
 const sampleUser = { id: 12345678, login: 'gray0128', avatar_url: 'https://avatars.githubusercontent.com/u/1' };
@@ -33,4 +34,15 @@ test('getOAuthFrontendUrl falls back to redirect origin', () => {
   const env = {};
   const url = getOAuthFrontendUrl(env, 'https://claw-task.example.com/api/auth/github/callback');
   assert.equal(url, 'https://claw-task.example.com');
+});
+
+test('buildOAuthSuccessHtml writes localStorage bridge script', () => {
+  const html = buildOAuthSuccessHtml('https://claw-task.example.com', 'secret-key', {
+    id: 1,
+    login: 'gray0128',
+    avatar_url: 'https://avatars.githubusercontent.com/u/1',
+  });
+  assert.match(html, /localStorage\.setItem\('TASK_API_KEY', data\.apiKey\)/);
+  assert.match(html, /window\.location\.replace\('\/'\)/);
+  assert.match(html, /gray0128/);
 });

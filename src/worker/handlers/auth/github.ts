@@ -35,14 +35,44 @@ export function getOAuthFrontendUrl(env: Bindings, redirectUri: string): string 
   return new URL(redirectUri).origin;
 }
 
-function buildOAuthSuccessRedirect(frontendUrl: string, apiKey: string, user: GitHubUser): string {
-  const query = new URLSearchParams({
-    oauth: 'success',
+/** HTML bridge page: writes credentials to localStorage then redirects to home. */
+export function buildOAuthSuccessHtml(frontendUrl: string, apiKey: string, user: GitHubUser): string {
+  const payload = JSON.stringify({
+    apiUrl: `${frontendUrl}/api`,
+    apiKey,
     username: user.login,
     avatar: user.avatar_url,
   });
-  // api_key only in hash — avoids URL parsing issues with avatar URLs
-  return `${frontendUrl}/?${query.toString()}#api_key=${encodeURIComponent(apiKey)}`;
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录中…</title>
+  <style>
+    body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f2f3f5; color: #4e5969; }
+  </style>
+</head>
+<body>
+  <p>GitHub 登录成功，正在进入任务管理…</p>
+  <script>
+    (function () {
+      var data = ${payload};
+      try {
+        localStorage.setItem('TASK_API_URL', data.apiUrl);
+        localStorage.setItem('TASK_API_KEY', data.apiKey);
+        localStorage.setItem('GITHUB_USERNAME', data.username);
+        localStorage.setItem('GITHUB_AVATAR', data.avatar);
+        sessionStorage.setItem('oauth_just_logged_in', '1');
+        window.location.replace('/');
+      } catch (err) {
+        document.body.innerHTML = '<p style="color:#f53f3f">登录失败：' + err.message + '</p>';
+      }
+    })();
+  </script>
+</body>
+</html>`;
 }
 
 function buildOAuthErrorRedirect(frontendUrl: string, message: string): string {
@@ -164,7 +194,7 @@ githubAuth.get('/callback', async (c) => {
       return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'Access denied: User not authorized'));
     }
 
-    return c.redirect(buildOAuthSuccessRedirect(frontendUrl, taskApiKey, userData));
+    return c.html(buildOAuthSuccessHtml(frontendUrl, taskApiKey, userData));
   } catch (error) {
     console.error('GitHub OAuth error:', error);
     return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'OAuth authentication failed'));
