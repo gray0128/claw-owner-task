@@ -37,48 +37,55 @@
   </div>
 
   <div id="appScreen" class="app-screen" hidden>
-    <header class="topbar">
-      <div class="topbar-start">
-        <h1 class="page-title">任务</h1>
-        <p id="systemMeta" class="system-meta"></p>
-      </div>
-      <div class="stats-pills" id="statsBar">
-        <button type="button" class="pill pill-filter" data-filter-status="pending">待处理 <strong id="statPending">-</strong></button>
-        <button type="button" class="pill pill-filter" data-filter-status="in_progress">进行中 <strong id="statProgress">-</strong></button>
-        <button type="button" class="pill pill-filter" data-filter-status="completed">已完成 <strong id="statCompleted">-</strong></button>
-        <button type="button" class="pill pill-filter pill-muted" data-filter-status="">共 <strong id="statTotal">-</strong></button>
-      </div>
-      <div class="topbar-end">
-        <button id="addTaskBtn" type="button" class="btn-primary btn-compact">新建任务</button>
-        <button id="manageBtn" type="button" class="btn-ghost">分类与标签</button>
-        <div id="userInfoSection" class="user-info">
-          <img id="userAvatar" alt="" width="26" height="26">
-          <span id="username"></span>
+    <header class="app-header">
+      <div class="header-row">
+        <div class="header-brand">
+          <h1 class="page-title">任务</h1>
+          <p id="systemMeta" class="system-meta"></p>
         </div>
-        <button id="logoutBtn" type="button" class="btn-ghost">退出</button>
+        <div class="stats-pills" id="statsBar">
+          <button type="button" class="pill pill-filter" data-filter-status="pending">待处理 <strong id="statPending">-</strong></button>
+          <button type="button" class="pill pill-filter" data-filter-status="in_progress">进行中 <strong id="statProgress">-</strong></button>
+          <button type="button" class="pill pill-filter" data-filter-status="completed">已完成 <strong id="statCompleted">-</strong></button>
+          <button type="button" class="pill pill-filter pill-muted" data-filter-status="">共 <strong id="statTotal">-</strong></button>
+        </div>
       </div>
+
+      <div class="header-actions">
+        <div class="header-actions-start">
+          <button id="addTaskBtn" type="button" class="btn-primary btn-compact">新建任务</button>
+          <button id="manageBtn" type="button" class="btn-ghost">分类与标签</button>
+        </div>
+        <div class="header-actions-end">
+          <div id="userInfoSection" class="user-info">
+            <img id="userAvatar" alt="" width="26" height="26">
+            <span id="username"></span>
+          </div>
+          <button id="logoutBtn" type="button" class="btn-ghost">退出</button>
+        </div>
+      </div>
+
+      <div id="activeFilters" class="active-filters" hidden></div>
+
+      <section class="toolbar">
+        <input type="search" id="searchQ" class="toolbar-search" placeholder="搜索任务">
+        <select id="filterStatus" aria-label="状态筛选">
+          <option value="">全部状态</option>
+          <option value="pending">待处理</option>
+          <option value="in_progress">进行中</option>
+          <option value="completed">已完成</option>
+          <option value="cancelled">已取消</option>
+        </select>
+        <select id="filterPriority" aria-label="优先级筛选">
+          <option value="">全部优先级</option>
+          <option value="high">高</option>
+          <option value="medium">中</option>
+          <option value="low">低</option>
+        </select>
+        <select id="filterCategory" aria-label="分类筛选"><option value="">全部分类</option></select>
+        <button id="refreshBtn" type="button" class="btn-ghost btn-compact">刷新</button>
+      </section>
     </header>
-
-    <div id="activeFilters" class="active-filters" hidden></div>
-
-    <section class="toolbar">
-      <input type="search" id="searchQ" class="toolbar-search" placeholder="搜索任务">
-      <select id="filterStatus" aria-label="状态筛选">
-        <option value="">全部状态</option>
-        <option value="pending">待处理</option>
-        <option value="in_progress">进行中</option>
-        <option value="completed">已完成</option>
-        <option value="cancelled">已取消</option>
-      </select>
-      <select id="filterPriority" aria-label="优先级筛选">
-        <option value="">全部优先级</option>
-        <option value="high">高</option>
-        <option value="medium">中</option>
-        <option value="low">低</option>
-      </select>
-      <select id="filterCategory" aria-label="分类筛选"><option value="">全部分类</option></select>
-      <button id="refreshBtn" type="button" class="btn-ghost btn-compact">刷新</button>
-    </section>
 
     <ul id="tasksContainer" class="tasks-list"></ul>
   </div>
