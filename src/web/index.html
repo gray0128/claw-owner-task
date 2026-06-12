@@ -49,6 +49,7 @@
         <button type="button" class="pill pill-filter pill-muted" data-filter-status="">共 <strong id="statTotal">-</strong></button>
       </div>
       <div class="topbar-end">
+        <button id="addTaskBtn" type="button" class="btn-primary btn-compact">新建任务</button>
         <button id="manageBtn" type="button" class="btn-ghost">分类与标签</button>
         <div id="userInfoSection" class="user-info">
           <img id="userAvatar" alt="" width="26" height="26">
@@ -57,34 +58,6 @@
         <button id="logoutBtn" type="button" class="btn-ghost">退出</button>
       </div>
     </header>
-
-    <section class="composer">
-      <form id="addTaskForm" class="composer-form">
-        <div class="composer-main">
-          <input type="text" id="taskTitle" class="composer-input" placeholder="输入任务标题，回车添加" required>
-          <select id="taskPriority" class="composer-select" aria-label="优先级">
-            <option value="low">低</option>
-            <option value="medium" selected>中</option>
-            <option value="high">高</option>
-          </select>
-          <button type="submit" class="btn-primary btn-compact">添加</button>
-        </div>
-        <details class="composer-more">
-          <summary>更多选项</summary>
-          <div class="composer-extra">
-            <textarea id="taskDesc" placeholder="描述" rows="2"></textarea>
-            <div class="form-row">
-              <select id="taskCategory"><option value="">无分类</option></select>
-              <input type="text" id="taskTags" placeholder="标签，逗号分隔">
-            </div>
-            <div class="form-row">
-              <input type="datetime-local" id="taskDueDate" title="截止时间">
-              <input type="datetime-local" id="taskRemindAt" title="提醒时间">
-            </div>
-          </div>
-        </details>
-      </form>
-    </section>
 
     <div id="activeFilters" class="active-filters" hidden></div>
 
@@ -110,7 +83,59 @@
     <ul id="tasksContainer" class="tasks-list"></ul>
   </div>
 
-  <div id="manageDrawer" class="drawer" hidden>
+  <div id="addTaskDrawer" class="drawer" hidden data-drawer="add-task">
+    <div class="drawer-backdrop" data-action="close-drawer"></div>
+    <aside class="drawer-panel" role="dialog" aria-labelledby="addTaskDrawerTitle">
+      <div class="drawer-header">
+        <h2 id="addTaskDrawerTitle">新建任务</h2>
+        <button type="button" class="drawer-close" data-action="close-drawer" aria-label="关闭">&times;</button>
+      </div>
+      <form id="addTaskForm" class="drawer-form task-form">
+        <label class="field">
+          <span class="field-label">标题</span>
+          <input type="text" id="taskTitle" placeholder="任务标题" required>
+        </label>
+        <label class="field">
+          <span class="field-label">描述</span>
+          <textarea id="taskDesc" placeholder="可选" rows="3"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">优先级</span>
+          <select id="taskPriority">
+            <option value="low">低</option>
+            <option value="medium" selected>中</option>
+            <option value="high">高</option>
+          </select>
+        </label>
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">分类</span>
+            <select id="taskCategory"><option value="">无分类</option></select>
+          </label>
+          <label class="field">
+            <span class="field-label">标签</span>
+            <input type="text" id="taskTags" placeholder="逗号分隔">
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">截止时间</span>
+            <input type="datetime-local" id="taskDueDate">
+          </label>
+          <label class="field">
+            <span class="field-label">提醒时间</span>
+            <input type="datetime-local" id="taskRemindAt">
+          </label>
+        </div>
+        <div class="drawer-actions">
+          <button type="button" class="btn-ghost" data-action="close-drawer">取消</button>
+          <button type="submit" class="btn-primary btn-compact">创建</button>
+        </div>
+      </form>
+    </aside>
+  </div>
+
+  <div id="manageDrawer" class="drawer" hidden data-drawer="manage">
     <div class="drawer-backdrop" data-action="close-drawer"></div>
     <aside class="drawer-panel" role="dialog" aria-labelledby="drawerTitle">
       <div class="drawer-header">

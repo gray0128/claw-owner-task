@@ -379,59 +379,6 @@ body:not(.is-authenticated) .app-screen { display: none !important; }
   border: 1px solid var(--border);
 }
 
-/* Composer */
-.composer {
-  margin-bottom: 20px;
-}
-
-.composer-main {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.composer-input {
-  flex: 1;
-  padding: 10px 0;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  background: transparent;
-  font-size: 15px;
-}
-
-.composer-input:focus {
-  outline: none;
-  border-bottom-color: var(--text);
-}
-
-.composer-select {
-  padding: 7px 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  font-size: 13px;
-}
-
-.composer-more {
-  margin-top: 10px;
-}
-
-.composer-more summary {
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
-}
-
-.composer-more summary::-webkit-details-marker { display: none; }
-
-.composer-extra {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 /* Toolbar */
 .toolbar {
   display: flex;
@@ -461,9 +408,9 @@ body:not(.is-authenticated) .app-screen { display: none !important; }
 
 .toolbar-search:focus,
 .toolbar select:focus,
-.composer-extra input:focus,
-.composer-extra select:focus,
-.composer-extra textarea:focus,
+.drawer-form input:focus,
+.drawer-form select:focus,
+.drawer-form textarea:focus,
 .task-form input:focus,
 .task-form select:focus,
 .task-form textarea:focus {
@@ -632,6 +579,52 @@ body:not(.is-authenticated) .app-screen { display: none !important; }
   font-weight: 500;
 }
 
+.drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.drawer-form input,
+.drawer-form select,
+.drawer-form textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  width: 100%;
+}
+
+.drawer-form textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.topbar-end .btn-primary {
+  width: auto;
+}
+
 /* Forms shared */
 .form-row {
   display: flex;
@@ -777,8 +770,6 @@ body:not(.is-authenticated) .app-screen { display: none !important; }
   .page-title { font-size: 1.625rem; }
   .topbar { flex-direction: column; align-items: stretch; }
   .topbar-end { margin-left: 0; justify-content: space-between; }
-  .composer-main { flex-wrap: wrap; }
-  .composer-input { width: 100%; flex: none; }
   .task-row { grid-template-columns: 1fr; }
   .task-actions { opacity: 1; }
 }

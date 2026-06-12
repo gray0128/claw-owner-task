@@ -50,6 +50,8 @@ const ui = {
   editTaskDueDate: document.getElementById('editTaskDueDate'),
   editTaskRemindAt: document.getElementById('editTaskRemindAt'),
   toastContainer: document.getElementById('toastContainer'),
+  addTaskBtn: document.getElementById('addTaskBtn'),
+  addTaskDrawer: document.getElementById('addTaskDrawer'),
   manageBtn: document.getElementById('manageBtn'),
   manageDrawer: document.getElementById('manageDrawer'),
   statsBar: document.getElementById('statsBar'),
@@ -203,14 +205,32 @@ const STATUS_LABELS = {
   cancelled: '已取消',
 };
 
-function openManageDrawer() {
-  ui.manageDrawer.hidden = false;
-  document.body.style.overflow = 'hidden';
+const drawers = [ui.addTaskDrawer, ui.manageDrawer];
+
+function isAnyDrawerOpen() {
+  return drawers.some((d) => d && !d.hidden);
 }
 
-function closeManageDrawer() {
-  ui.manageDrawer.hidden = true;
+function openDrawer(drawer, focusSelector) {
+  drawers.forEach((d) => { if (d) d.hidden = true; });
+  drawer.hidden = false;
+  document.body.style.overflow = 'hidden';
+  if (focusSelector) {
+    requestAnimationFrame(() => drawer.querySelector(focusSelector)?.focus());
+  }
+}
+
+function closeDrawers() {
+  drawers.forEach((d) => { if (d) d.hidden = true; });
   document.body.style.overflow = '';
+}
+
+function openAddTaskDrawer() {
+  openDrawer(ui.addTaskDrawer, '#taskTitle');
+}
+
+function openManageDrawer() {
+  openDrawer(ui.manageDrawer);
 }
 
 function renderCategoriesList(categories) {
@@ -504,6 +524,7 @@ ui.addTaskForm.addEventListener('submit', async (e) => {
       remind_at: fromDatetimeLocalValue(ui.taskRemindAt.value),
     });
     ui.addTaskForm.reset();
+    closeDrawers();
     toast('任务已创建', 'success');
     await initSystemInfo();
     await Promise.all([refreshStats(), loadTasks()]);
@@ -632,12 +653,17 @@ ui.tagsList.addEventListener('click', async (e) => {
   }
 });
 
+ui.addTaskBtn.addEventListener('click', openAddTaskDrawer);
 ui.manageBtn.addEventListener('click', openManageDrawer);
-ui.manageDrawer.addEventListener('click', (e) => {
-  if (e.target.closest('[data-action="close-drawer"]')) closeManageDrawer();
+
+document.querySelectorAll('.drawer').forEach((drawer) => {
+  drawer.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="close-drawer"]')) closeDrawers();
+  });
 });
+
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !ui.manageDrawer.hidden) closeManageDrawer();
+  if (e.key === 'Escape' && isAnyDrawerOpen()) closeDrawers();
 });
 
 ui.statsBar.addEventListener('click', (e) => {
