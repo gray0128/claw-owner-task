@@ -1,6 +1,21 @@
-const DEFAULT_API_URL = `${window.location.origin}/api`;
+export const DEFAULT_API_URL = `${window.location.origin}/api`;
 
-let API_URL = localStorage.getItem('TASK_API_URL') || DEFAULT_API_URL;
+function resolveApiUrl() {
+  const stored = localStorage.getItem('TASK_API_URL');
+  if (!stored) return DEFAULT_API_URL;
+  try {
+    if (new URL(stored).origin !== window.location.origin) {
+      localStorage.setItem('TASK_API_URL', DEFAULT_API_URL);
+      return DEFAULT_API_URL;
+    }
+    return stored;
+  } catch {
+    localStorage.setItem('TASK_API_URL', DEFAULT_API_URL);
+    return DEFAULT_API_URL;
+  }
+}
+
+let API_URL = resolveApiUrl();
 let API_KEY = localStorage.getItem('TASK_API_KEY') || '';
 
 export function updateConfig(url, key) {

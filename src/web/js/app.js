@@ -1,6 +1,4 @@
-import { api, updateConfig, getConfig, isAuthenticated } from './api.js';
-
-const DEFAULT_API_URL = `${window.location.origin}/api`;
+import { api, updateConfig, getConfig, isAuthenticated, DEFAULT_API_URL } from './api.js';
 
 const ui = {
   loginScreen: document.getElementById('loginScreen'),
@@ -93,6 +91,20 @@ function updateLoginUI() {
   }
 }
 
+function parseOAuthApiKey() {
+  const query = new URLSearchParams(window.location.search);
+  const hash = window.location.hash.slice(1);
+
+  if (hash.startsWith('api_key=')) {
+    return decodeURIComponent(hash.slice('api_key='.length));
+  }
+  if (hash) {
+    const fromHash = new URLSearchParams(hash).get('api_key');
+    if (fromHash) return fromHash;
+  }
+  return query.get('api_key');
+}
+
 function handleOAuthCallback() {
   const query = new URLSearchParams(window.location.search);
   const oauthError = query.get('oauth_error');
@@ -100,26 +112,22 @@ function handleOAuthCallback() {
     ui.oauthError.textContent = decodeURIComponent(oauthError);
     ui.oauthError.hidden = false;
     window.history.replaceState({}, document.title, window.location.pathname);
-    return;
+    return false;
   }
 
-  const hash = window.location.hash.slice(1);
-  if (!hash) return;
+  const apiKey = parseOAuthApiKey();
+  if (!apiKey) return false;
 
-  const params = new URLSearchParams(hash);
-  const apiKey = params.get('api_key');
-  if (!apiKey) return;
+  updateConfig(DEFAULT_API_URL, apiKey);
 
-  const config = getConfig();
-  updateConfig(config.url || DEFAULT_API_URL, apiKey);
-
-  const username = params.get('username');
-  const avatar = params.get('avatar');
+  const username = query.get('username');
+  const avatar = query.get('avatar');
   if (username) localStorage.setItem('GITHUB_USERNAME', username);
   if (avatar) localStorage.setItem('GITHUB_AVATAR', avatar);
 
   window.history.replaceState({}, document.title, window.location.pathname);
   toast(`欢迎回来，${username || '用户'}！`, 'success');
+  return true;
 }
 
 function toDatetimeLocalValue(isoStr) {
@@ -331,13 +339,22 @@ async function bootstrap() {
   const config = getConfig();
   ui.apiUrl.value = config.url || DEFAULT_API_URL;
 
-  handleOAuthCallback();
+  const oauthHandled = handleOAuthCallback();
 
   if (isAuthenticated()) {
     showScreen(true);
     updateLoginUI();
-    await initSystemInfo();
-    await loadTasks();
+    try {
+      await initSystemInfo();
+      await loadTasks();
+    } catch (err) {
+      updateConfig(DEFAULT_API_URL, '');
+      showScreen(false);
+      ui.oauthError.textContent = oauthHandled
+        ? `GitHub 登录后验证失败：${err.message}`
+        : `登录已失效：${err.message}`;
+      ui.oauthError.hidden = false;
+    }
   } else {
     showScreen(false);
   }
@@ -364,8 +381,8 @@ ui.apiKeyForm.addEventListener('submit', async (e) => {
 });
 
 ui.githubLoginBtn.addEventListener('click', () => {
-  const apiUrl = getConfig().url || DEFAULT_API_URL;
-  window.location.href = `${apiUrl}/auth/github/login`;
+  updateConfig(DEFAULT_API_URL, getConfig().key);
+  window.location.href = `${DEFAULT_API_URL}/auth/github/login`;
 });
 
 ui.logoutBtn.addEventListener('click', async () => {

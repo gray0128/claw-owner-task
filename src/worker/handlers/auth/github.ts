@@ -36,12 +36,13 @@ export function getOAuthFrontendUrl(env: Bindings, redirectUri: string): string 
 }
 
 function buildOAuthSuccessRedirect(frontendUrl: string, apiKey: string, user: GitHubUser): string {
-  const hash = new URLSearchParams({
-    api_key: apiKey,
+  const query = new URLSearchParams({
+    oauth: 'success',
     username: user.login,
     avatar: user.avatar_url,
   });
-  return `${frontendUrl}/#${hash.toString()}`;
+  // api_key only in hash — avoids URL parsing issues with avatar URLs
+  return `${frontendUrl}/?${query.toString()}#api_key=${encodeURIComponent(apiKey)}`;
 }
 
 function buildOAuthErrorRedirect(frontendUrl: string, message: string): string {
