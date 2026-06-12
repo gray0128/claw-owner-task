@@ -1,4 +1,4 @@
-import { api, updateConfig, getConfig, isAuthenticated, DEFAULT_API_URL } from './api.js';
+import { api, updateConfig, getConfig, isAuthenticated, reloadConfig, DEFAULT_API_URL } from './api.js';
 
 const ui = {
   loginScreen: document.getElementById('loginScreen'),
@@ -75,6 +75,7 @@ function escapeHtml(str) {
 function showScreen(authenticated) {
   ui.loginScreen.hidden = authenticated;
   ui.appScreen.hidden = !authenticated;
+  document.body.classList.toggle('is-authenticated', authenticated);
 }
 
 function updateLoginUI() {
@@ -126,7 +127,6 @@ function handleOAuthCallback() {
   if (avatar) localStorage.setItem('GITHUB_AVATAR', avatar);
 
   window.history.replaceState({}, document.title, window.location.pathname);
-  toast(`欢迎回来，${username || '用户'}！`, 'success');
   return true;
 }
 
@@ -336,6 +336,7 @@ function closeEditModal() {
 }
 
 async function bootstrap() {
+  reloadConfig();
   const config = getConfig();
   ui.apiUrl.value = config.url || DEFAULT_API_URL;
 

@@ -65,6 +65,20 @@ button, input, select, textarea {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Screen visibility — explicit rules so [hidden] wins over display:flex */
+.login-screen[hidden],
+.app-screen[hidden] {
+  display: none !important;
+}
+
+body.is-authenticated .login-screen {
+  display: none !important;
+}
+
+body:not(.is-authenticated) .app-screen {
+  display: none !important;
+}
+
 /* Login */
 .login-screen {
   min-height: 100vh;

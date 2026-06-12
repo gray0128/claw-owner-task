@@ -33,6 +33,13 @@ export function isAuthenticated() {
   return !!API_KEY;
 }
 
+/** Re-read localStorage (e.g. after OAuth bridge page redirect). */
+export function reloadConfig() {
+  API_URL = resolveApiUrl();
+  API_KEY = localStorage.getItem('TASK_API_KEY') || '';
+  return getConfig();
+}
+
 async function request(endpoint, options = {}) {
   const headers = {
     'Content-Type': 'application/json',
