@@ -52,11 +52,14 @@ const ui = {
   toastContainer: document.getElementById('toastContainer'),
   manageBtn: document.getElementById('manageBtn'),
   manageDrawer: document.getElementById('manageDrawer'),
+  statsBar: document.getElementById('statsBar'),
+  activeFilters: document.getElementById('activeFilters'),
 };
 
 let systemInfo = null;
 let systemTimezone = 'Asia/Shanghai';
 let searchDebounce = null;
+let activeTagFilter = '';
 
 function toast(message, type = 'info') {
   const el = document.createElement('div');
@@ -250,6 +253,64 @@ function updateStats(tasks) {
   ui.statTotal.textContent = counts.total;
 }
 
+async function refreshStats() {
+  try {
+    const all = await api.tasks.list('');
+    updateStats(all);
+  } catch (e) {
+    console.error('Failed to refresh stats', e);
+  }
+}
+
+function syncStatusPills() {
+  const status = ui.filterStatus.value;
+  ui.statsBar.querySelectorAll('[data-filter-status]').forEach((el) => {
+    const value = el.dataset.filterStatus;
+    el.classList.toggle('active', value === status);
+  });
+}
+
+function setStatusFilter(status) {
+  ui.filterStatus.value = status;
+  syncStatusPills();
+  loadTasks();
+}
+
+function setTagFilter(tagName) {
+  activeTagFilter = activeTagFilter === tagName ? '' : tagName;
+  renderActiveFilters();
+  loadTasks();
+}
+
+function clearAllFilters() {
+  activeTagFilter = '';
+  ui.filterStatus.value = '';
+  ui.filterPriority.value = '';
+  ui.filterCategory.value = '';
+  ui.searchQ.value = '';
+  syncStatusPills();
+  renderActiveFilters();
+  loadTasks();
+}
+
+function renderActiveFilters() {
+  const chips = [];
+  if (activeTagFilter) {
+    chips.push(`<span class="filter-chip">标签：${escapeHtml(activeTagFilter)} <button type="button" data-action="clear-tag" aria-label="清除标签筛选">×</button></span>`);
+  }
+  const status = ui.filterStatus.value;
+  if (status) {
+    chips.push(`<span class="filter-chip">状态：${escapeHtml(STATUS_LABELS[status] || status)} <button type="button" data-action="clear-status" aria-label="清除状态筛选">×</button></span>`);
+  }
+  if (chips.length) {
+    ui.activeFilters.innerHTML = chips.join('');
+    ui.activeFilters.hidden = false;
+  } else {
+    ui.activeFilters.innerHTML = '';
+    ui.activeFilters.hidden = true;
+  }
+}
+
 async function initSystemInfo() {
   if (!isAuthenticated()) return;
   try {
@@ -283,11 +344,13 @@ async function loadTasks() {
     if (status) params.append('status', status);
     if (priority) params.append('priority', priority);
     if (categoryId) params.append('category_id', categoryId);
+    if (activeTagFilter) params.append('tag_name', activeTagFilter);
 
     const query = params.toString() ? `?${params.toString()}` : '';
     const tasks = await api.tasks.list(query);
 
-    updateStats(tasks);
+    syncStatusPills();
+    renderActiveFilters();
     ui.tasksContainer.innerHTML = '';
 
     if (tasks.length === 0) {
@@ -302,13 +365,19 @@ async function loadTasks() {
       li.style.setProperty('--i', String(index));
 
       const tags = Array.isArray(task.tags) ? task.tags : [];
-      const tagText = tags.length ? tags.map((t) => escapeHtml(t.name)).join(', ') : '';
       const lineParts = [
         `<span class="priority-dot ${task.priority}" aria-hidden="true"></span>`,
         `<span>${STATUS_LABELS[task.status] || task.status}</span>`,
       ];
       if (task.category_name) lineParts.push(`<span class="sep">·</span><span>${escapeHtml(task.category_name)}</span>`);
-      if (tagText) lineParts.push(`<span class="sep">·</span><span>${tagText}</span>`);
+      if (tags.length) {
+        const tagButtons = tags.map((t) => {
+          const name = escapeHtml(t.name);
+          const active = activeTagFilter === t.name ? ' active' : '';
+          return `<button type="button" class="tag-link${active}" data-action="filter-tag" data-tag="${name}">${name}</button>`;
+        }).join('');
+        lineParts.push(`<span class="sep">·</span><span class="task-tags">${tagButtons}</span>`);
+      }
       if (task.due_date) {
         lineParts.push(`<span class="sep">·</span><span class="${overdue ? 'overdue' : ''}">截止 ${formatDate(task.due_date)}${overdue ? ' 逾期' : ''}</span>`);
       }
@@ -367,7 +436,7 @@ async function bootstrap() {
     updateLoginUI();
     try {
       await initSystemInfo();
-      await loadTasks();
+      await Promise.all([refreshStats(), loadTasks()]);
       if (sessionStorage.getItem('oauth_just_logged_in')) {
         sessionStorage.removeItem('oauth_just_logged_in');
         const name = localStorage.getItem('GITHUB_USERNAME');
@@ -399,7 +468,7 @@ ui.apiKeyForm.addEventListener('submit', async (e) => {
     showScreen(true);
     updateLoginUI();
     toast('登录成功', 'success');
-    await loadTasks();
+    await Promise.all([refreshStats(), loadTasks()]);
   } catch {
     updateConfig(ui.apiUrl.value, '');
     toast('API Key 无效，请检查后重试', 'error');
@@ -436,8 +505,8 @@ ui.addTaskForm.addEventListener('submit', async (e) => {
     });
     ui.addTaskForm.reset();
     toast('任务已创建', 'success');
-    await loadTasks();
     await initSystemInfo();
+    await Promise.all([refreshStats(), loadTasks()]);
   } catch (err) {
     toast(`创建失败：${err.message}`, 'error');
   } finally {
@@ -446,6 +515,13 @@ ui.addTaskForm.addEventListener('submit', async (e) => {
 });
 
 ui.tasksContainer.addEventListener('click', async (e) => {
+  const tagBtn = e.target.closest('[data-action="filter-tag"]');
+  if (tagBtn) {
+    e.preventDefault();
+    setTagFilter(tagBtn.dataset.tag);
+    return;
+  }
+
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const { action, id } = btn.dataset;
@@ -454,7 +530,7 @@ ui.tasksContainer.addEventListener('click', async (e) => {
     try {
       await api.tasks.complete(id);
       toast('任务已完成', 'success');
-      loadTasks();
+      Promise.all([refreshStats(), loadTasks()]);
     } catch (err) {
       toast(err.message, 'error');
     }
@@ -470,7 +546,7 @@ ui.tasksContainer.addEventListener('click', async (e) => {
     try {
       await api.tasks.delete(id);
       toast('任务已删除', 'success');
-      loadTasks();
+      Promise.all([refreshStats(), loadTasks()]);
     } catch (err) {
       toast(err.message, 'error');
     }
@@ -493,7 +569,7 @@ ui.editTaskForm.addEventListener('submit', async (e) => {
     });
     closeEditModal();
     toast('任务已更新', 'success');
-    loadTasks();
+    Promise.all([refreshStats(), loadTasks()]);
   } catch (err) {
     toast(`更新失败：${err.message}`, 'error');
   }
@@ -564,8 +640,35 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !ui.manageDrawer.hidden) closeManageDrawer();
 });
 
-ui.refreshBtn.addEventListener('click', loadTasks);
-ui.filterStatus.addEventListener('change', loadTasks);
+ui.statsBar.addEventListener('click', (e) => {
+  const pill = e.target.closest('[data-filter-status]');
+  if (!pill) return;
+  setStatusFilter(pill.dataset.filterStatus);
+});
+
+ui.activeFilters.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  if (btn.dataset.action === 'clear-tag') {
+    activeTagFilter = '';
+    renderActiveFilters();
+    loadTasks();
+  } else if (btn.dataset.action === 'clear-status') {
+    ui.filterStatus.value = '';
+    syncStatusPills();
+    renderActiveFilters();
+    loadTasks();
+  }
+});
+
+ui.refreshBtn.addEventListener('click', async () => {
+  await Promise.all([refreshStats(), loadTasks()]);
+});
+ui.filterStatus.addEventListener('change', () => {
+  syncStatusPills();
+  renderActiveFilters();
+  loadTasks();
+});
 ui.filterPriority.addEventListener('change', loadTasks);
 ui.filterCategory.addEventListener('change', loadTasks);
 ui.searchQ.addEventListener('input', () => {
