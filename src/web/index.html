@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Claw Owner Task</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -15,17 +18,13 @@
         <h1>Claw Owner Task</h1>
         <p class="brand-sub">个人任务管理</p>
       </div>
-
       <div id="oauthError" class="alert" hidden></div>
-
       <div class="login-methods">
         <button id="githubLoginBtn" type="button" class="btn-github">
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.18.82.63-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.51-1.04 2.18-.82 2.18-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
           GitHub 登录
         </button>
-
         <div class="divider"><span>或 API Key</span></div>
-
         <form id="apiKeyForm" class="api-key-form">
           <label for="apiKey">TASK_API_KEY</label>
           <input type="password" id="apiKey" placeholder="输入 API Key" autocomplete="current-password" required>
@@ -38,41 +37,42 @@
   </div>
 
   <div id="appScreen" class="app-screen" hidden>
-    <header class="app-header">
-      <div class="header-left">
-        <h1>任务管理</h1>
+    <header class="topbar">
+      <div class="topbar-start">
+        <h1 class="page-title">任务</h1>
         <p id="systemMeta" class="system-meta"></p>
       </div>
-      <div class="header-right">
+      <div class="stats-pills" id="statsBar">
+        <span class="pill">待处理 <strong id="statPending">-</strong></span>
+        <span class="pill">进行中 <strong id="statProgress">-</strong></span>
+        <span class="pill">已完成 <strong id="statCompleted">-</strong></span>
+        <span class="pill pill-muted">共 <strong id="statTotal">-</strong></span>
+      </div>
+      <div class="topbar-end">
+        <button id="manageBtn" type="button" class="btn-ghost">分类与标签</button>
         <div id="userInfoSection" class="user-info">
-          <img id="userAvatar" alt="" width="28" height="28">
+          <img id="userAvatar" alt="" width="26" height="26">
           <span id="username"></span>
         </div>
         <button id="logoutBtn" type="button" class="btn-ghost">退出</button>
       </div>
     </header>
 
-    <div class="stats-inline" id="statsBar">
-      <span class="stat-item">待处理 <strong id="statPending">-</strong></span>
-      <span class="stat-item">进行中 <strong id="statProgress">-</strong></span>
-      <span class="stat-item">已完成 <strong id="statCompleted">-</strong></span>
-      <span class="stat-item">全部 <strong id="statTotal">-</strong></span>
-    </div>
-
-    <div class="app-grid">
-      <main class="main-panel">
-        <section class="panel">
-          <h2>新建</h2>
-          <form id="addTaskForm" class="task-form">
-            <div class="form-row">
-              <input type="text" id="taskTitle" placeholder="任务标题" required>
-              <select id="taskPriority">
-                <option value="low">低</option>
-                <option value="medium" selected>中</option>
-                <option value="high">高</option>
-              </select>
-            </div>
-            <textarea id="taskDesc" placeholder="描述（可选）" rows="2"></textarea>
+    <section class="composer">
+      <form id="addTaskForm" class="composer-form">
+        <div class="composer-main">
+          <input type="text" id="taskTitle" class="composer-input" placeholder="输入任务标题，回车添加" required>
+          <select id="taskPriority" class="composer-select" aria-label="优先级">
+            <option value="low">低</option>
+            <option value="medium" selected>中</option>
+            <option value="high">高</option>
+          </select>
+          <button type="submit" class="btn-primary btn-compact">添加</button>
+        </div>
+        <details class="composer-more">
+          <summary>更多选项</summary>
+          <div class="composer-extra">
+            <textarea id="taskDesc" placeholder="描述" rows="2"></textarea>
             <div class="form-row">
               <select id="taskCategory"><option value="">无分类</option></select>
               <input type="text" id="taskTags" placeholder="标签，逗号分隔">
@@ -81,60 +81,58 @@
               <input type="datetime-local" id="taskDueDate" title="截止时间">
               <input type="datetime-local" id="taskRemindAt" title="提醒时间">
             </div>
-            <button type="submit" class="btn-primary">添加</button>
-          </form>
-        </section>
-
-        <section class="panel task-list-panel">
-          <div class="panel-header">
-            <h2>列表</h2>
-            <button id="refreshBtn" type="button" class="btn-ghost">刷新</button>
-          </div>
-          <div class="filters">
-            <input type="search" id="searchQ" placeholder="搜索">
-            <select id="filterStatus">
-              <option value="">全部状态</option>
-              <option value="pending">待处理</option>
-              <option value="in_progress">进行中</option>
-              <option value="completed">已完成</option>
-              <option value="cancelled">已取消</option>
-            </select>
-            <select id="filterPriority">
-              <option value="">全部优先级</option>
-              <option value="high">高</option>
-              <option value="medium">中</option>
-              <option value="low">低</option>
-            </select>
-            <select id="filterCategory"><option value="">全部分类</option></select>
-          </div>
-          <ul id="tasksContainer" class="tasks-list"></ul>
-        </section>
-      </main>
-
-      <aside class="side-panel">
-        <details class="details-block" open>
-          <summary>分类</summary>
-          <div class="details-body">
-            <form id="addCategoryForm" class="inline-form">
-              <input type="text" id="categoryName" placeholder="名称" required>
-              <input type="color" id="categoryColor" value="#787774" title="颜色">
-              <button type="submit" class="btn-sm">添加</button>
-            </form>
-            <ul id="categoriesList" class="meta-list"></ul>
           </div>
         </details>
-        <details class="details-block">
-          <summary>标签</summary>
-          <div class="details-body">
-            <form id="addTagForm" class="inline-form">
-              <input type="text" id="tagName" placeholder="名称" required>
-              <button type="submit" class="btn-sm">添加</button>
-            </form>
-            <ul id="tagsList" class="meta-list"></ul>
-          </div>
-        </details>
-      </aside>
-    </div>
+      </form>
+    </section>
+
+    <section class="toolbar">
+      <input type="search" id="searchQ" class="toolbar-search" placeholder="搜索任务">
+      <select id="filterStatus" aria-label="状态筛选">
+        <option value="">全部状态</option>
+        <option value="pending">待处理</option>
+        <option value="in_progress">进行中</option>
+        <option value="completed">已完成</option>
+        <option value="cancelled">已取消</option>
+      </select>
+      <select id="filterPriority" aria-label="优先级筛选">
+        <option value="">全部优先级</option>
+        <option value="high">高</option>
+        <option value="medium">中</option>
+        <option value="low">低</option>
+      </select>
+      <select id="filterCategory" aria-label="分类筛选"><option value="">全部分类</option></select>
+      <button id="refreshBtn" type="button" class="btn-ghost btn-compact">刷新</button>
+    </section>
+
+    <ul id="tasksContainer" class="tasks-list"></ul>
+  </div>
+
+  <div id="manageDrawer" class="drawer" hidden>
+    <div class="drawer-backdrop" data-action="close-drawer"></div>
+    <aside class="drawer-panel" role="dialog" aria-labelledby="drawerTitle">
+      <div class="drawer-header">
+        <h2 id="drawerTitle">分类与标签</h2>
+        <button type="button" class="drawer-close" data-action="close-drawer" aria-label="关闭">&times;</button>
+      </div>
+      <div class="drawer-section">
+        <h3>分类</h3>
+        <form id="addCategoryForm" class="inline-form">
+          <input type="text" id="categoryName" placeholder="新分类" required>
+          <input type="color" id="categoryColor" value="#787774" title="颜色">
+          <button type="submit" class="btn-primary btn-compact">添加</button>
+        </form>
+        <ul id="categoriesList" class="meta-list"></ul>
+      </div>
+      <div class="drawer-section">
+        <h3>标签</h3>
+        <form id="addTagForm" class="inline-form">
+          <input type="text" id="tagName" placeholder="新标签" required>
+          <button type="submit" class="btn-primary btn-compact">添加</button>
+        </form>
+        <ul id="tagsList" class="meta-list meta-list-scroll"></ul>
+      </div>
+    </aside>
   </div>
 
   <div id="editModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" hidden>
@@ -171,7 +169,7 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-ghost modal-cancel">取消</button>
-          <button type="submit" class="btn-primary" style="width:auto">保存</button>
+          <button type="submit" class="btn-primary btn-compact">保存</button>
         </div>
       </form>
     </div>
