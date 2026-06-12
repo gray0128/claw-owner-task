@@ -191,31 +191,39 @@ function populateCategorySelects(categories) {
   });
 }
 
+const PRIORITY_LABELS = { low: '低', medium: '中', high: '高' };
+const STATUS_LABELS = {
+  pending: '待处理',
+  in_progress: '进行中',
+  completed: '已完成',
+  cancelled: '已取消',
+};
+
 function renderCategoriesList(categories) {
   if (!categories?.length) {
-    ui.categoriesList.innerHTML = '<li class="empty-hint">暂无分类</li>';
+    ui.categoriesList.innerHTML = '<li><span class="meta-name">暂无</span></li>';
     return;
   }
   ui.categoriesList.innerHTML = categories.map((cat) => `
     <li>
       <span class="meta-name">
-        <span class="color-dot" style="background:${escapeHtml(cat.color || '#3b82f6')}"></span>
+        <span class="color-dot" style="background:${escapeHtml(cat.color || '#787774')}"></span>
         ${escapeHtml(cat.name)}
       </span>
-      <button type="button" data-action="delete-category" data-id="${cat.id}">删除</button>
+      <button type="button" class="btn-text danger" data-action="delete-category" data-id="${cat.id}">删除</button>
     </li>
   `).join('');
 }
 
 function renderTagsList(tags) {
   if (!tags?.length) {
-    ui.tagsList.innerHTML = '<li class="empty-hint">暂无标签</li>';
+    ui.tagsList.innerHTML = '<li><span class="meta-name">暂无</span></li>';
     return;
   }
   ui.tagsList.innerHTML = tags.map((tag) => `
     <li>
-      <span class="meta-name">#${escapeHtml(tag.name)}</span>
-      <button type="button" data-action="delete-tag" data-id="${tag.id}">删除</button>
+      <span class="meta-name">${escapeHtml(tag.name)}</span>
+      <button type="button" class="btn-text danger" data-action="delete-tag" data-id="${tag.id}">删除</button>
     </li>
   `).join('');
 }
@@ -279,30 +287,34 @@ async function loadTasks() {
     tasks.forEach((task) => {
       const li = document.createElement('li');
       const overdue = isOverdue(task);
-      li.className = `task-card${task.status === 'completed' ? ' completed' : ''}${overdue ? ' overdue' : ''}`;
+      li.className = `task-row${task.status === 'completed' ? ' completed' : ''}`;
 
       const tags = Array.isArray(task.tags) ? task.tags : [];
-      const tagsHtml = tags.map((t) => `<span class="badge tag">#${escapeHtml(t.name)}</span>`).join('');
+      const tagsHtml = tags.map((t) => `<span class="badge tag">${escapeHtml(t.name)}</span>`).join('');
+      const metaParts = [];
+      if (task.due_date) {
+        metaParts.push(`<span class="meta-item${overdue ? ' overdue' : ''}">截止 ${formatDate(task.due_date)}${overdue ? ' · 逾期' : ''}</span>`);
+      }
+      if (task.remind_at) metaParts.push(`<span class="meta-item">提醒 ${formatDate(task.remind_at)}</span>`);
+      if (task.completed_at) metaParts.push(`<span class="meta-item">完成 ${formatDate(task.completed_at)}</span>`);
+      metaParts.push(`<span class="meta-item">创建 ${formatDate(task.created_at)}</span>`);
 
       li.innerHTML = `
-        <h3 class="task-title">#${task.id} ${escapeHtml(task.title)}</h3>
-        <div class="badges">
-          <span class="badge priority-${task.priority}">${task.priority}</span>
-          <span class="badge status-${task.status}">${task.status.replace('_', ' ')}</span>
-          ${task.category_name ? `<span class="badge category">${escapeHtml(task.category_name)}</span>` : ''}
-          ${tagsHtml}
-        </div>
-        ${task.description ? `<div class="task-desc">${escapeHtml(task.description)}</div>` : ''}
-        <div class="task-meta">
-          ${task.due_date ? `<div class="meta-item${overdue ? ' overdue' : ''}">📅 截止：${formatDate(task.due_date)}${overdue ? '（已逾期）' : ''}</div>` : ''}
-          ${task.remind_at ? `<div class="meta-item">⏰ 提醒：${formatDate(task.remind_at)}</div>` : ''}
-          ${task.completed_at ? `<div class="meta-item">✅ 完成：${formatDate(task.completed_at)}</div>` : ''}
-          <div class="meta-item">🕒 创建：${formatDate(task.created_at)}</div>
+        <div class="task-main">
+          <h3 class="task-title">${escapeHtml(task.title)}</h3>
+          <div class="badges">
+            <span class="badge priority-${task.priority}">${PRIORITY_LABELS[task.priority] || task.priority}</span>
+            <span class="badge status-${task.status}">${STATUS_LABELS[task.status] || task.status}</span>
+            ${task.category_name ? `<span class="badge category">${escapeHtml(task.category_name)}</span>` : ''}
+            ${tagsHtml}
+          </div>
+          ${task.description ? `<div class="task-desc">${escapeHtml(task.description)}</div>` : ''}
+          <div class="task-meta">${metaParts.join('')}</div>
         </div>
         <div class="task-actions">
-          ${task.status !== 'completed' ? `<button class="btn-complete" data-action="complete" data-id="${task.id}">完成</button>` : ''}
-          <button class="btn-edit" data-action="edit" data-id="${task.id}">编辑</button>
-          <button class="btn-delete" data-action="delete" data-id="${task.id}">删除</button>
+          ${task.status !== 'completed' ? `<button type="button" class="btn-text" data-action="complete" data-id="${task.id}">完成</button>` : ''}
+          <button type="button" class="btn-text" data-action="edit" data-id="${task.id}">编辑</button>
+          <button type="button" class="btn-text danger" data-action="delete" data-id="${task.id}">删除</button>
         </div>
       `;
       ui.tasksContainer.appendChild(li);

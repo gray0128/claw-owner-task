@@ -9,28 +9,26 @@
 <body>
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-  <!-- Login screen -->
   <div id="loginScreen" class="login-screen">
     <div class="login-card">
       <div class="brand">
-        <div class="brand-icon">🦞</div>
         <h1>Claw Owner Task</h1>
-        <p class="brand-sub">AI 优先的个人任务管理系统</p>
+        <p class="brand-sub">个人任务管理</p>
       </div>
 
-      <div id="oauthError" class="alert alert-error" hidden></div>
+      <div id="oauthError" class="alert" hidden></div>
 
       <div class="login-methods">
         <button id="githubLoginBtn" type="button" class="btn-github">
-          <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.18.82.63-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.51-1.04 2.18-.82 2.18-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-          使用 GitHub 登录
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.18.82.63-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.51-1.04 2.18-.82 2.18-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub 登录
         </button>
 
-        <div class="divider"><span>或使用 API Key</span></div>
+        <div class="divider"><span>或 API Key</span></div>
 
         <form id="apiKeyForm" class="api-key-form">
           <label for="apiKey">TASK_API_KEY</label>
-          <input type="password" id="apiKey" placeholder="输入你的 API Key" autocomplete="current-password" required>
+          <input type="password" id="apiKey" placeholder="输入 API Key" autocomplete="current-password" required>
           <label for="apiUrl">API 地址</label>
           <input type="url" id="apiUrl" placeholder="https://your-domain.com/api" required>
           <button type="submit" class="btn-primary">登录</button>
@@ -39,65 +37,61 @@
     </div>
   </div>
 
-  <!-- Main app -->
   <div id="appScreen" class="app-screen" hidden>
     <header class="app-header">
       <div class="header-left">
-        <span class="header-logo">🦞</span>
-        <div>
-          <h1>任务管理</h1>
-          <p id="systemMeta" class="system-meta"></p>
-        </div>
+        <h1>任务管理</h1>
+        <p id="systemMeta" class="system-meta"></p>
       </div>
       <div class="header-right">
         <div id="userInfoSection" class="user-info">
-          <img id="userAvatar" alt="" width="32" height="32">
+          <img id="userAvatar" alt="" width="28" height="28">
           <span id="username"></span>
         </div>
         <button id="logoutBtn" type="button" class="btn-ghost">退出</button>
       </div>
     </header>
 
-    <section class="stats-bar" id="statsBar">
-      <div class="stat-card"><span class="stat-value" id="statPending">-</span><span class="stat-label">待处理</span></div>
-      <div class="stat-card"><span class="stat-value" id="statProgress">-</span><span class="stat-label">进行中</span></div>
-      <div class="stat-card"><span class="stat-value" id="statCompleted">-</span><span class="stat-label">已完成</span></div>
-      <div class="stat-card"><span class="stat-value" id="statTotal">-</span><span class="stat-label">全部</span></div>
-    </section>
+    <div class="stats-inline" id="statsBar">
+      <span class="stat-item">待处理 <strong id="statPending">-</strong></span>
+      <span class="stat-item">进行中 <strong id="statProgress">-</strong></span>
+      <span class="stat-item">已完成 <strong id="statCompleted">-</strong></span>
+      <span class="stat-item">全部 <strong id="statTotal">-</strong></span>
+    </div>
 
     <div class="app-grid">
       <main class="main-panel">
-        <section class="panel task-form-panel">
-          <h2>新建任务</h2>
+        <section class="panel">
+          <h2>新建</h2>
           <form id="addTaskForm" class="task-form">
             <div class="form-row">
-              <input type="text" id="taskTitle" placeholder="任务标题 *" required>
+              <input type="text" id="taskTitle" placeholder="任务标题" required>
               <select id="taskPriority">
-                <option value="low">低优先级</option>
-                <option value="medium" selected>中优先级</option>
-                <option value="high">高优先级</option>
+                <option value="low">低</option>
+                <option value="medium" selected>中</option>
+                <option value="high">高</option>
               </select>
             </div>
-            <textarea id="taskDesc" placeholder="描述（可选，支持 Markdown）" rows="2"></textarea>
+            <textarea id="taskDesc" placeholder="描述（可选）" rows="2"></textarea>
             <div class="form-row">
               <select id="taskCategory"><option value="">无分类</option></select>
-              <input type="text" id="taskTags" placeholder="标签（逗号分隔）">
+              <input type="text" id="taskTags" placeholder="标签，逗号分隔">
             </div>
             <div class="form-row">
               <input type="datetime-local" id="taskDueDate" title="截止时间">
               <input type="datetime-local" id="taskRemindAt" title="提醒时间">
             </div>
-            <button type="submit" class="btn-primary">添加任务</button>
+            <button type="submit" class="btn-primary">添加</button>
           </form>
         </section>
 
         <section class="panel task-list-panel">
           <div class="panel-header">
-            <h2>任务列表</h2>
-            <button id="refreshBtn" type="button" class="btn-ghost btn-sm">刷新</button>
+            <h2>列表</h2>
+            <button id="refreshBtn" type="button" class="btn-ghost">刷新</button>
           </div>
           <div class="filters">
-            <input type="search" id="searchQ" placeholder="搜索标题或描述…">
+            <input type="search" id="searchQ" placeholder="搜索">
             <select id="filterStatus">
               <option value="">全部状态</option>
               <option value="pending">待处理</option>
@@ -113,33 +107,36 @@
             </select>
             <select id="filterCategory"><option value="">全部分类</option></select>
           </div>
-          <ul id="tasksContainer" class="tasks-grid"></ul>
+          <ul id="tasksContainer" class="tasks-list"></ul>
         </section>
       </main>
 
       <aside class="side-panel">
-        <section class="panel">
-          <h2>分类</h2>
-          <form id="addCategoryForm" class="inline-form">
-            <input type="text" id="categoryName" placeholder="分类名称" required>
-            <input type="color" id="categoryColor" value="#3b82f6" title="颜色">
-            <button type="submit" class="btn-sm btn-primary">+</button>
-          </form>
-          <ul id="categoriesList" class="meta-list"></ul>
-        </section>
-        <section class="panel">
-          <h2>标签</h2>
-          <form id="addTagForm" class="inline-form">
-            <input type="text" id="tagName" placeholder="标签名称" required>
-            <button type="submit" class="btn-sm btn-primary">+</button>
-          </form>
-          <ul id="tagsList" class="meta-list"></ul>
-        </section>
+        <details class="details-block" open>
+          <summary>分类</summary>
+          <div class="details-body">
+            <form id="addCategoryForm" class="inline-form">
+              <input type="text" id="categoryName" placeholder="名称" required>
+              <input type="color" id="categoryColor" value="#787774" title="颜色">
+              <button type="submit" class="btn-sm">添加</button>
+            </form>
+            <ul id="categoriesList" class="meta-list"></ul>
+          </div>
+        </details>
+        <details class="details-block">
+          <summary>标签</summary>
+          <div class="details-body">
+            <form id="addTagForm" class="inline-form">
+              <input type="text" id="tagName" placeholder="名称" required>
+              <button type="submit" class="btn-sm">添加</button>
+            </form>
+            <ul id="tagsList" class="meta-list"></ul>
+          </div>
+        </details>
       </aside>
     </div>
   </div>
 
-  <!-- Edit modal -->
   <div id="editModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-content">
@@ -149,7 +146,7 @@
       </div>
       <form id="editTaskForm" class="task-form">
         <input type="hidden" id="editTaskId">
-        <input type="text" id="editTaskTitle" placeholder="任务标题 *" required>
+        <input type="text" id="editTaskTitle" placeholder="任务标题" required>
         <textarea id="editTaskDesc" placeholder="描述" rows="3"></textarea>
         <div class="form-row">
           <select id="editTaskPriority">
@@ -166,7 +163,7 @@
         </div>
         <div class="form-row">
           <select id="editTaskCategory"><option value="">无分类</option></select>
-          <input type="text" id="editTaskTags" placeholder="标签（逗号分隔）">
+          <input type="text" id="editTaskTags" placeholder="标签，逗号分隔">
         </div>
         <div class="form-row">
           <input type="datetime-local" id="editTaskDueDate">
@@ -174,7 +171,7 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-ghost modal-cancel">取消</button>
-          <button type="submit" class="btn-primary">保存</button>
+          <button type="submit" class="btn-primary" style="width:auto">保存</button>
         </div>
       </form>
     </div>
