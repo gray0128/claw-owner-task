@@ -3,6 +3,73 @@ import type { Bindings } from '../..';
 
 const githubAuth = new Hono<{ Bindings: Bindings }>();
 
+type GitHubUser = { id: number; login: string; avatar_url: string };
+
+/** GITHUB_ALLOWED_USER_ID accepts numeric ID or username for backward compatibility. */
+export function isGitHubUserAllowed(
+  user: GitHubUser,
+  allowedUserId?: string,
+  allowedUsername?: string
+): boolean {
+  if (!allowedUserId && !allowedUsername) return false;
+
+  const login = user.login.toLowerCase();
+
+  if (allowedUserId) {
+    if (/^\d+$/.test(allowedUserId)) {
+      if (user.id.toString() === allowedUserId) return true;
+    } else if (login === allowedUserId.toLowerCase()) {
+      return true;
+    }
+  }
+
+  if (allowedUsername && login === allowedUsername.toLowerCase()) {
+    return true;
+  }
+
+  return false;
+}
+
+export function getOAuthFrontendUrl(env: Bindings, redirectUri: string): string {
+  if (env.BASE_URL) return env.BASE_URL.replace(/\/$/, '');
+  return new URL(redirectUri).origin;
+}
+
+function buildOAuthSuccessRedirect(frontendUrl: string, apiKey: string, user: GitHubUser): string {
+  const hash = new URLSearchParams({
+    api_key: apiKey,
+    username: user.login,
+    avatar: user.avatar_url,
+  });
+  return `${frontendUrl}/#${hash.toString()}`;
+}
+
+function buildOAuthErrorRedirect(frontendUrl: string, message: string): string {
+  return `${frontendUrl}/?oauth_error=${encodeURIComponent(message)}`;
+}
+
+
+
+// GET /api/auth/github/url — return authorize URL for clients that need JSON
+githubAuth.get('/url', async (c) => {
+  const clientId = c.env.GITHUB_OAUTH_CLIENT_ID;
+  const redirectUri = c.env.GITHUB_OAUTH_REDIRECT_URI;
+
+  if (!clientId || !redirectUri) {
+    return c.json({
+      success: false,
+      error: { message: 'GitHub OAuth is not configured' },
+    }, 500);
+  }
+
+  const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
+  githubAuthUrl.searchParams.set('client_id', clientId);
+  githubAuthUrl.searchParams.set('redirect_uri', redirectUri);
+  githubAuthUrl.searchParams.set('scope', 'read:user');
+
+  return c.json({ success: true, data: { url: githubAuthUrl.toString() }, error: null });
+});
+
 // GitHub OAuth login endpoint
 githubAuth.get('/login', async (c) => {
   const clientId = c.env.GITHUB_OAUTH_CLIENT_ID;
@@ -11,7 +78,7 @@ githubAuth.get('/login', async (c) => {
   if (!clientId || !redirectUri) {
     return c.json({
       success: false,
-      error: { message: 'GitHub OAuth is not configured' }
+      error: { message: 'GitHub OAuth is not configured' },
     }, 500);
   }
 
@@ -33,76 +100,73 @@ githubAuth.get('/callback', async (c) => {
   const taskApiKey = c.env.TASK_API_KEY;
   const redirectUri = c.env.GITHUB_OAUTH_REDIRECT_URI;
 
-  if (!code) {
-    return c.json({
-      success: false,
-      error: { message: 'Missing authorization code' }
-    }, 400);
-  }
+  const frontendUrl = redirectUri
+    ? getOAuthFrontendUrl(c.env, redirectUri)
+    : c.env.BASE_URL?.replace(/\/$/, '');
 
-  if (!clientId || !clientSecret || !allowedUserId || !taskApiKey || !redirectUri) {
+  if (!frontendUrl) {
     return c.json({
       success: false,
-      error: { message: 'GitHub OAuth is not properly configured' }
+      error: { message: 'GitHub OAuth redirect is not configured' },
     }, 500);
   }
 
+  if (!code) {
+    return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'Missing authorization code'));
+  }
+
+  if (!clientId || !clientSecret || !taskApiKey || !redirectUri) {
+    return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'GitHub OAuth is not properly configured'));
+  }
+
+  if (!allowedUserId && !allowedUsername) {
+    return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'No allowed GitHub user configured'));
+  }
+
   try {
-    // Exchange code for access token
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
       },
       body: JSON.stringify({
         client_id: clientId,
         client_secret: clientSecret,
-        code: code
-      })
+        code,
+      }),
     });
 
-    const tokenData = await tokenResponse.json() as { access_token?: string };
+    const tokenData = await tokenResponse.json() as { access_token?: string; error?: string };
     const accessToken = tokenData.access_token;
 
     if (!accessToken) {
-      return c.json({
-        success: false,
-        error: { message: 'Failed to get access token' }
-      }, 401);
+      const reason = tokenData.error || 'Failed to get access token';
+      return c.redirect(buildOAuthErrorRedirect(frontendUrl, reason));
     }
 
-    // Get user info
     const userResponse = await fetch('https://api.github.com/user', {
       headers: {
-        'Authorization': `token ${accessToken}`,
-        'Accept': 'application/json'
-      }
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+        'User-Agent': 'claw-owner-task',
+      },
     });
 
-    const userData = await userResponse.json() as { id: number; login: string; avatar_url: string };
-
-    // Verify user is allowed
-    const userIdMatches = userData.id.toString() === allowedUserId.toString();
-    const usernameMatches = !allowedUsername || userData.login === allowedUsername;
-
-    if (!userIdMatches || !usernameMatches) {
-      return c.json({
-        success: false,
-        error: { message: 'Access denied: User not authorized' }
-      }, 403);
+    if (!userResponse.ok) {
+      return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'Failed to fetch GitHub user profile'));
     }
 
-    // Redirect back to frontend with API key
-    const frontendUrl = new URL(redirectUri).origin;
-    return c.redirect(`${frontendUrl}?api_key=${taskApiKey}&username=${userData.login}&avatar=${userData.avatar_url}`);
+    const userData = await userResponse.json() as GitHubUser;
 
+    if (!isGitHubUserAllowed(userData, allowedUserId, allowedUsername)) {
+      return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'Access denied: User not authorized'));
+    }
+
+    return c.redirect(buildOAuthSuccessRedirect(frontendUrl, taskApiKey, userData));
   } catch (error) {
     console.error('GitHub OAuth error:', error);
-    return c.json({
-      success: false,
-      error: { message: 'OAuth authentication failed' }
-    }, 500);
+    return c.redirect(buildOAuthErrorRedirect(frontendUrl, 'OAuth authentication failed'));
   }
 });
 

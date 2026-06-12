@@ -456,6 +456,33 @@ test('【AI语义处理】AI-SEM-04: 安全白名单校验 (非法操作)', asyn
   }
 });
 
+test('【GitHub OAuth】GH-01: /auth/github/url 无需鉴权', async () => {
+  const res = await fetch(`${BASE_URL}/auth/github/url`);
+  const body = await res.json();
+  assert.ok(res.status === 200 || res.status === 500, '应返回配置状态');
+  if (res.status === 200) {
+    assert.ok(body.data.url.includes('github.com/login/oauth/authorize'));
+  }
+});
+
+test('【GitHub OAuth】GH-02: /auth/github/login 无需 Bearer Token', async () => {
+  const res = await fetch(`${BASE_URL}/auth/github/login`, { redirect: 'manual' });
+  assert.ok(res.status === 302 || res.status === 500, '应重定向到 GitHub 或返回未配置错误');
+  if (res.status === 302) {
+    const location = res.headers.get('location') || '';
+    assert.ok(location.includes('github.com/login/oauth/authorize'));
+  }
+});
+
+test('【GitHub OAuth】GH-03: callback 缺少 code 时重定向错误页', async () => {
+  const res = await fetch(`${BASE_URL}/auth/github/callback`, { redirect: 'manual' });
+  assert.ok([302, 500].includes(res.status));
+  if (res.status === 302) {
+    const location = res.headers.get('location') || '';
+    assert.ok(location.includes('oauth_error='));
+  }
+});
+
 test('【AI语义处理】AI-SEM-05: 模糊匹配上下文测试 (验证接口通畅性)', async () => {
   // 准备一个特定名称的任务供 AI 识别
   const uniqueTitle = `Fuzzy_Test_${Date.now()}`;
