@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "autopilot": {
+    "enabled": true,
+    "trigger_labels": ["agent:autopilot"],
+    "mention_triggers": ["AgentOrchestratorIfify"],
+    "allowed_actors": ["gray0128"]
+  },
+  "merge": {
+    "default_method": "squash",
+    "auto_merge": {
+      "enabled": true,
+      "allowed_risks": ["low"],
+      "blocked_labels": ["agent:no-merge", "needs-human", "risk:high"]
+    }
+  },
+  "paths": {
+    "allow": ["**"],
+    "deny": [".github/**", ".dev.vars", "wrangler.toml", "package-lock.json"],
+    "high_risk": []
+  },
+  "checks": {
+    "required": [],
+    "source": "policy_required_names"
+  },
+  "review": {
+    "max_fix_rounds": 3,
+    "require_plan_review": true,
+    "require_pr_review": true,
+    "required_pr_approvals": 2,
+    "agent_review_counts_as_human_review": false
+  }
+}
